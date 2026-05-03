@@ -1345,8 +1345,8 @@ function spawnConfetti() {
   setTimeout(() => el.remove(), 6000);
 }
 function startConfetti() {
-  for (let i = 0; i < 80; i++) setTimeout(spawnConfetti, i * 40);
-  const ci = setInterval(spawnConfetti, 150);
+  for (let i = 0; i < 50; i++) setTimeout(spawnConfetti, i * 40);
+  const ci = setInterval(spawnConfetti, 200);
   activeConfettiIntervals.push(ci);
   setTimeout(() => clearInterval(ci), 8000);
 }
