@@ -462,12 +462,18 @@
   }
 
   /* ---- MEMORY PHASE ---- */
+  #memory-phase .phase-card {
+    width: min(94vw, 760px);
+    max-width: 760px;
+    overflow-x: visible;
+  }
   .memory-stage {
     position: relative;
-    width: min(94vw, 680px);
-    min-height: 450px;
-    margin: 1rem 0 1.4rem;
-    overflow: hidden;
+    width: 100%;
+    max-width: 680px;
+    min-height: 440px;
+    margin: 1rem auto 1.4rem;
+    overflow: visible;
     touch-action: none;
     border-radius: 18px;
     background:
@@ -476,7 +482,7 @@
   }
   .memory-photo {
     position: absolute;
-    width: min(50vw, 220px);
+    width: clamp(150px, 26vw, 210px);
     aspect-ratio: 3 / 4;
     padding: .58rem .58rem 2.45rem;
     border-radius: 8px;
@@ -823,8 +829,12 @@
     .phase-card h2 { font-size: 2rem; line-height: 1.1; }
     .phase-card p { font-size: .92rem; line-height: 1.55; margin-bottom: 1.2rem; }
     .btn { width: 100%; max-width: 310px; padding: .95rem 1.1rem; font-size: 1rem; }
+    #memory-phase .phase-card {
+      width: min(100%, 360px);
+      max-width: 360px;
+    }
     .memory-stage { width: 100%; min-height: 390px; }
-    .memory-photo { width: 156px; padding-bottom: 1.8rem; }
+    .memory-photo { width: clamp(132px, 43vw, 156px); padding-bottom: 1.8rem; }
     .memory-photo span { font-size: 1.05rem; }
     .scratch-secret { font-size: 1.55rem; }
     .wish-jar { height: 235px; }
