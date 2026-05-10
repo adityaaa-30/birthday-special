@@ -1,4 +1,4 @@
-// Main website behavior. Search for PHASE names to find each celebration step.
+﻿// Main website behavior. Search for PHASE names to find each celebration step.
 // =========================================================
 //  UTILS
 // =========================================================
@@ -6,7 +6,7 @@ const $ = id => document.getElementById(id);
 const rand = (a, b) => Math.random() * (b - a) + a;
 const randInt = (a, b) => Math.floor(rand(a, b));
 
-const celebrationUnlockAt = Date.UTC(2026, 4, 15, 18, 30, 0); // 16 May 2026, 12:00 AM IST
+ const celebrationUnlockAt = Date.UTC(2026, 4, 15, 18, 30, 0); // 16 May 2026, 12:00 AM IST
 // Testing bypass: comment the line above and uncomment this line to open the site instantly.
 // const celebrationUnlockAt = Date.now() - 1000;
 let celebrationGateTimer = null;
@@ -299,6 +299,7 @@ function showPhase(id) {
   $(id).classList.remove('hidden');
   if (id !== 'balloon-phase') $('balloonHint').classList.remove('show');
   if (id === 'balloon-phase') clearFloatingDecorations();
+  if (id === 'scratch-phase') removeDecorTitle();
 }
 
 function clearFloatingDecorations() {
@@ -307,6 +308,10 @@ function clearFloatingDecorations() {
   document.querySelectorAll('.birthday-decor').forEach(el => el.remove());
   document.querySelectorAll('.confetti').forEach(el => el.remove());
   persistentDecorations = 0;
+}
+
+function removeDecorTitle() {
+  document.querySelectorAll('.decor-title').forEach(el => el.remove());
 }
 
 // =========================================================
@@ -341,6 +346,7 @@ function createBirthdayBackdrop() {
   clearFloatingDecorations();
   const decor = document.createElement('div');
   decor.className = 'birthday-decor';
+  if (isLowMotionDevice) decor.classList.add('mobile-decor');
 
   const rope = document.createElement('div');
   rope.className = 'birthday-rope';
@@ -354,26 +360,38 @@ function createBirthdayBackdrop() {
     ['#ffffff', '#d7d5d5'],
     ['#f2c2ce', '#bfb7bb']
   ];
-  const points = [
+  const desktopPoints = [
     [10, 36, 64, -12, 3.1], [15, 27, 52, 8, 2.8], [22, 20, 72, -7, 3.4],
     [31, 15, 56, 12, 3], [41, 12, 76, -5, 3.5], [51, 11, 58, 7, 2.9],
     [61, 12, 74, -2, 3.2], [71, 16, 56, 9, 3.5], [80, 23, 72, -10, 3],
     [87, 32, 58, 7, 3.3], [92, 43, 66, -8, 2.9], [7, 48, 54, 13, 3.5],
     [18, 42, 46, 8, 3.6], [83, 44, 48, -6, 3.1], [28, 13, 42, 11, 3.3],
-    [74, 13, 44, -9, 3.2]
+    [74, 13, 44, -9, 3.2], [8, 62, 50, -8, 3.7], [15, 74, 42, 10, 3.9],
+    [25, 86, 54, -13, 3.4], [75, 84, 52, 11, 3.6], [86, 72, 44, -9, 3.8],
+    [94, 60, 56, 8, 3.5], [4, 83, 38, 7, 4.1], [96, 88, 40, -10, 4]
   ];
+  const mobilePoints = [
+    [10, 26, 42, -12, 3.2], [19, 15, 34, 8, 3.6], [30, 8, 46, -6, 3.4],
+    [42, 5, 34, 5, 3.8], [54, 6, 48, -4, 3.3], [66, 9, 34, 8, 3.7],
+    [78, 16, 44, -9, 3.2], [90, 28, 38, 11, 3.5], [12, 50, 32, 7, 3.9],
+    [88, 52, 32, -7, 3.9], [50, 28, 30, 4, 4.1], [9, 66, 34, -8, 4],
+    [20, 80, 30, 9, 4.2], [82, 78, 32, -10, 4.1], [92, 66, 34, 8, 4],
+    [50, 84, 28, 5, 4.4]
+  ];
+  const points = isLowMotionDevice ? mobilePoints : desktopPoints;
 
   points.forEach(([x, y, s, r, dur], index) => {
     const b = document.createElement('span');
     const [c, d] = colors[index % colors.length];
-    b.className = `decor-balloon${index === 0 || index === 11 ? ' heart' : ''}${s < 52 ? ' small' : ''}`;
-    b.style.cssText = `--x:${x}%;--y:${y}%;--s:${s}px;--r:${r}deg;--dur:${dur}s;--delay:${index * .035}s;--c:${c};--d:${d}`;
+    b.className = `decor-balloon${index === 0 || index === 4 || (!isLowMotionDevice && index === 11) ? ' heart' : ''}${s < 52 ? ' small' : ''}`;
+    b.style.cssText = `--x:${x}%;--y:${y}%;--s:${s}px;--r:${r}deg;--dur:${dur}s;--delay:${index * .045}s;--c:${c};--d:${d}`;
     decor.appendChild(b);
   });
 
   const banner = document.createElement('div');
   banner.className = 'birthday-banner';
-  'HAPPYBIRTHDAY'.split('').forEach(letter => {
+  const bannerText = isLowMotionDevice ? 'HAPPYBDAY' : 'HAPPYBIRTHDAY';
+  bannerText.split('').forEach(letter => {
     const flag = document.createElement('span');
     flag.textContent = letter;
     flag.style.setProperty('--delay', `${.35 + banner.children.length * .035}s`);
@@ -381,7 +399,17 @@ function createBirthdayBackdrop() {
   });
   decor.appendChild(banner);
 
-  const flowers = [
+  const birthdayTitle = document.createElement('div');
+  birthdayTitle.className = 'decor-title';
+  birthdayTitle.innerHTML = '<span>Happy 18th Birthday</span><strong>fineshyyt</strong>';
+  decor.appendChild(birthdayTitle);
+
+  const flowers = isLowMotionDevice ? [
+    [13, 34, '🌸', 1.18], [24, 19, '💗', 1.08], [36, 12, '✨', 1],
+    [50, 9, '🌺', 1.12], [64, 12, '✨', 1], [76, 20, '💗', 1.08],
+    [87, 35, '🌸', 1.18], [20, 58, '💕', 1.05], [50, 48, '🌷', 1.08],
+    [80, 60, '💕', 1.05]
+  ] : [
     [17, 37, '🌸', 1.6], [24, 18, '🌺', 1.3], [36, 13, '🌷', 1.2],
     [48, 10, '🌸', 1.4], [63, 13, '🌺', 1.25], [76, 20, '🌷', 1.35],
     [84, 38, '🌸', 1.55], [12, 49, '🌺', 1.2], [90, 49, '🌺', 1.2]
@@ -394,10 +422,21 @@ function createBirthdayBackdrop() {
     decor.appendChild(el);
   });
 
+  if (isLowMotionDevice) {
+    ['♡', '✦', '♡', '✧', '♡', '✦', '♡', '✧'].forEach((petal, index) => {
+      const el = document.createElement('span');
+      el.className = 'mobile-petal';
+      el.textContent = petal;
+      el.style.cssText = `--x:${rand(12,88)}%;--delay:${index * .28}s;--dur:${rand(4.5,6.2)}s;--drift:${rand(-28,28)}px`;
+      decor.appendChild(el);
+    });
+  }
+
   document.body.appendChild(decor);
 }
 
 $('decorateBtn').addEventListener('click', () => {
+  $('decorateBtn').closest('.phase-card').classList.add('decor-card-done');
   createBirthdayBackdrop();
   startConfetti();
   setTimeout(() => {
@@ -450,13 +489,16 @@ function spawnMusicNote() {
 }
 
 $('musicBtn').addEventListener('click', () => {
+  $('musicBtn').closest('.phase-card').classList.add('decor-card-done');
   playOurSong();
   musicNoteInterval = setInterval(spawnMusicNote, motion.musicNoteInterval);
   startConfetti();
   setTimeout(() => {
-    clearInterval(musicNoteInterval);
     showPhase('scratch-phase');
     initScratchCard();
+  }, 320);
+  setTimeout(() => {
+    clearInterval(musicNoteInterval);
   }, 4000);
 });
 
@@ -843,7 +885,7 @@ $('balloonBtn').addEventListener('click', () => {
 // =========================================================
 const finalMessageText = `Happy 18th Birthday, Ragini.
 
-Aaj tum officially 18 ki ho gayi, but mere liye tum wahi ho jiski smile dekh ke din thoda better lagne lagta hai.
+Aaj tum officially 18 ki ho gayi, but mere liye tum wahi ho jiski smile dekh ke din better ho jata hai.
 
 I don't know perfect words kaise likhte hain, par itna sach hai ki tum meri life ka bahut special part ho. Tumhari chhoti chhoti baatein, tumhara mood, tumhari hansi, sab yaad reh jaata hai.
 
@@ -851,15 +893,17 @@ Is new year me bas yahi wish hai ki tum khud ko hamesha pyaar se dekho, apne dre
 
 18th birthday sirf ek number nahi hai, Ragini. Ye tumhari ek new beginning hai. Aur main genuinely chahta hoon ki is beginning me tumhare saath sirf good memories, soft moments, aur bahut saari smiles ho.
 
-Happy Birthday, my favourite person.
+Happy Birthday, meri fineshyyt💘.
 Tum ho to sab kuch thoda zyada beautiful lagta hai.`;
 
 let typewriterTimer;
 function startTypewriterMessage() {
   const el = $('finalMessage');
+  const giftReveal = $('giftReveal');
   clearInterval(typewriterTimer);
   el.textContent = '';
   el.classList.add('type-cursor');
+  giftReveal.classList.remove('show');
   let i = 0;
   typewriterTimer = setInterval(() => {
     el.textContent += finalMessageText[i] || '';
@@ -867,6 +911,7 @@ function startTypewriterMessage() {
     if (i >= finalMessageText.length) {
       clearInterval(typewriterTimer);
       setTimeout(() => el.classList.remove('type-cursor'), 700);
+      setTimeout(() => giftReveal.classList.add('show'), 900);
     }
   }, 28);
 }
@@ -877,4 +922,5 @@ function startFinalConfetti() {
   // play melody again softly
   playHappyBirthday();
 }
+
 
