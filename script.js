@@ -250,6 +250,18 @@ function playTone(freq, start, duration, type = 'sine', vol = .3) {
 
 // Pop sound
 function playPop() {
+  popTrack.currentTime = 0;
+  popTrack.volume = .9;
+  popTrack.muted = audioMuted;
+  const popPromise = popTrack.play();
+  if (popPromise) {
+    popPromise.catch(playGeneratedPop);
+    return;
+  }
+  playGeneratedPop();
+}
+
+function playGeneratedPop() {
   const ctx = getAudio();
   const buf = ctx.createBuffer(1, ctx.sampleRate * .15, ctx.sampleRate);
   const data = buf.getChannelData(0);
@@ -282,23 +294,82 @@ function playHappyBirthday() {
 }
 
 const musicTrack = new Audio('song1.mp3');
-const flashbackTrack = new Audio('song2.mp3');
+const finalMessageTrack = new Audio('song2.mp3');
+const flashbackTrack = new Audio('song3.mp3');
+const popTrack = new Audio('pop.mp3');
 musicTrack.preload = 'auto';
+finalMessageTrack.preload = 'auto';
 flashbackTrack.preload = 'auto';
+popTrack.preload = 'auto';
+musicTrack.loop = true;
+finalMessageTrack.loop = true;
+flashbackTrack.loop = true;
+let activeAudioTrack = null;
+let audioMuted = false;
+const audioFadeTimers = new WeakMap();
 
-function stopAudioTrack(track) {
-  track.pause();
-  track.currentTime = 0;
+function updateAudioToggle() {
+  const btn = $('audioToggle');
+  btn.textContent = audioMuted ? '🔇' : '🔊';
+  btn.title = audioMuted ? 'Sound off' : 'Sound on';
+  btn.setAttribute('aria-label', audioMuted ? 'Unmute sound' : 'Mute sound');
+  btn.classList.toggle('muted', audioMuted);
+}
+
+function clearAudioFade(track) {
+  const timer = audioFadeTimers.get(track);
+  if (timer) clearInterval(timer);
+  audioFadeTimers.delete(track);
+}
+
+function fadeTrackVolume(track, toVolume, duration = 900, onDone) {
+  clearAudioFade(track);
+  const fromVolume = track.volume || 0;
+  const steps = Math.max(1, Math.round(duration / 50));
+  let step = 0;
+  const timer = setInterval(() => {
+    step++;
+    const progress = Math.min(1, step / steps);
+    track.volume = fromVolume + (toVolume - fromVolume) * progress;
+    if (progress >= 1) {
+      clearAudioFade(track);
+      if (onDone) onDone();
+    }
+  }, 50);
+  audioFadeTimers.set(track, timer);
+}
+
+function stopAudioTrack(track, fade = true) {
+  clearAudioFade(track);
+  if (track.paused) return;
+  const finish = () => {
+    track.pause();
+    track.currentTime = 0;
+    if (activeAudioTrack === track) activeAudioTrack = null;
+  };
+  if (fade) fadeTrackVolume(track, 0, 850, finish);
+  else finish();
 }
 
 function playAudioTrack(track, volume = .85) {
-  [musicTrack, flashbackTrack].forEach(activeTrack => {
+  $('audioToggle').classList.remove('hidden');
+  [musicTrack, finalMessageTrack, flashbackTrack].forEach(activeTrack => {
     if (activeTrack !== track) stopAudioTrack(activeTrack);
   });
+  activeAudioTrack = track;
   track.currentTime = 0;
-  track.volume = volume;
+  track.volume = 0;
+  track.muted = audioMuted;
   const playPromise = track.play();
-  if (playPromise) playPromise.catch(() => playHappyBirthday());
+  if (playPromise) {
+    playPromise
+      .then(() => {
+        if (!audioMuted) fadeTrackVolume(track, volume, 1100);
+      })
+      .catch(() => playHappyBirthday());
+  } else if (!audioMuted) {
+    fadeTrackVolume(track, volume, 1100);
+  }
 }
 
 function playOurSong() {
@@ -308,6 +379,19 @@ function playOurSong() {
 function playFlashbackSong() {
   playAudioTrack(flashbackTrack, .82);
 }
+
+function playFinalMessageSong() {
+  playAudioTrack(finalMessageTrack, .78);
+}
+
+$('audioToggle').addEventListener('click', () => {
+  audioMuted = !audioMuted;
+  [musicTrack, finalMessageTrack, flashbackTrack, popTrack].forEach(track => {
+    track.muted = audioMuted;
+  });
+  updateAudioToggle();
+});
+updateAudioToggle();
 
 // =========================================================
 //  PHASE MANAGEMENT
@@ -508,14 +592,20 @@ function spawnMusicNote() {
 
 $('musicBtn').addEventListener('click', () => {
   $('musicBtn').closest('.phase-card').classList.add('decor-card-done');
-  playOurSong();
-  musicNoteInterval = setInterval(spawnMusicNote, motion.musicNoteInterval);
-  startConfetti();
+  $('soundTip').classList.remove('hidden');
+  requestAnimationFrame(() => $('soundTip').classList.add('show'));
+  setTimeout(() => $('soundTip').classList.remove('show'), 2500);
+  setTimeout(() => $('soundTip').classList.add('hidden'), 3000);
+  setTimeout(() => {
+    playOurSong();
+    musicNoteInterval = setInterval(spawnMusicNote, motion.musicNoteInterval);
+    startConfetti();
+  }, 1200);
   setTimeout(() => {
     startCountdown('cake-phase');
   }, 2000);
   setTimeout(() => {
-    clearInterval(musicNoteInterval);
+    if (musicNoteInterval) clearInterval(musicNoteInterval);
   }, 4000);
 });
 
@@ -527,8 +617,12 @@ let flashbackPhotos = [];
 let flashbackTimer;
 
 function revealGiftStep() {
+  stopAudioTrack(flashbackTrack);
   $('giftReveal').classList.add('show');
   $('giftCheck').classList.remove('hidden');
+  setTimeout(() => {
+    $('giftOpenBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 250);
 }
 
 function preloadFlashbackPhotos() {
@@ -675,7 +769,7 @@ async function submitGiftReview(score, emoji) {
 
     setGiftSubmitStatus('Sent to Aditya. Ab woh photo aur rating dekh payega 💖', 'success');
   } catch {
-    setGiftSubmitStatus('Send nahi ho paya. Internet/config check karke dobara rating tap karo.', 'error');
+    setGiftSubmitStatus('Unable to send. Internet/config check karke dobara rating tap karo.', 'error');
   } finally {
     giftSubmitting = false;
   }
@@ -763,10 +857,11 @@ $('captureGiftBtn').addEventListener('click', captureGiftPhoto);
 // =========================================================
 const wishes = [
   'Endless smiles for you',
-  'A year full of love',
-  'Dreams coming true',
-  'Lots of hugs and laughter',
-  'A heart that always feels loved'
+  'Your dreams coming true',
+  'May Mahadev bless you',
+  'make proud your parents',
+  'Happiness in every moment',
+  'Success in all you do',
 ];
 
 function launchFloatingWishes() {
@@ -906,6 +1001,7 @@ $('cakeNextBtn').addEventListener('click', () => {
 });
 
 function startCountdown(nextPhase = 'balloon-phase') {
+  if (nextPhase !== 'cake-phase') stopAudioTrack(musicTrack);
   showPhase('countdown-phase');
   const nums = ['3', '2', '1'];
   let index = 0;
@@ -1024,11 +1120,13 @@ const finalMessageText = `Happy 18th Birthday, Ragini.
 
 Aaj tum officially 18 ki ho gayi, but mere liye tum wahi ho jiski smile dekh ke din better ho jata hai.
 
-I don't know perfect words kaise likhte hain, par itna sach hai ki tum meri life ka bahut special part ho. Tumhari chhoti chhoti baatein, tumhara mood, tumhari hansi, sab yaad reh jaata hai.
+I don't know perfect words kaise likhte hain, par itna sach hai ki tum meri life ka bahut special part ho. Tumhari chhoti chhoti baatein, tumhara mood, tumhari hansi, sab ek special moment hai mere liye.
 
-Is new year me bas yahi wish hai ki tum khud ko hamesha pyaar se dekho, apne dreams ke liye confident raho, aur tumhe woh happiness mile jo tum deserve karti ho.
+Is new year me bas yahi wish hai ki tum khud ko hamesha pyaar se dekho, apne dreams ke liye confident raho khub mehnat karo, aur tumhe woh happiness mile jo tum deserve karti ho hope us se jyada hi.
 
-18th birthday sirf ek number nahi hai, Ragini. Ye tumhari ek new beginning hai. Aur main genuinely chahta hoon ki is beginning me tumhare saath sirf good memories, soft moments, aur bahut saari smiles ho.
+18th birthday sirf ek number nahi hai, Ragini. Ye tumhari ek new beginning hai. Aur main genuinely chahta hoon ki is beginning me tumhare saath sirf good memories, soft moments, aur bahut saari cheeje create karu.
+
+haa pichle 2.5 months se hamare beech sab kuch utna acha nahi hai lekin mai tumhare saath hi reh ke sab thik krna chahta hoon.
 
 Happy Birthday, meri fineshyyt💘.
 Tum ho to sab kuch thoda zyada beautiful lagta hai.`;
@@ -1039,6 +1137,7 @@ function startTypewriterMessage() {
   const giftReveal = $('giftReveal');
   const memoryStartBtn = $('memoryStartBtn');
   clearInterval(typewriterTimer);
+  playFinalMessageSong();
   el.textContent = '';
   el.classList.add('type-cursor');
   giftReveal.classList.remove('show');
@@ -1060,9 +1159,4 @@ function startTypewriterMessage() {
 function startFinalConfetti() {
   const ci = setInterval(spawnConfetti, motion.finalConfettiInterval);
   setTimeout(() => clearInterval(ci), motion.finalConfettiDuration);
-  // play melody again softly
-  playHappyBirthday();
 }
-
-
-
