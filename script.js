@@ -765,7 +765,7 @@ async function submitGiftReview(score, emoji) {
     });
     if (!saveResponse.ok) throw new Error('Rating save failed');
 
-    setGiftSubmitStatus('Sent to Aditya. Ab woh photo aur rating dekh payega 💖', 'success');
+    setGiftSubmitStatus('Sent to Aditya. Now he can see the photo and rating 💖', 'success');
   } catch {
     setGiftSubmitStatus('Unable to send. Internet/config check karke dobara rating tap karo.', 'error');
   } finally {
@@ -826,7 +826,7 @@ function captureGiftPhoto() {
   const height = video.videoHeight || 480;
 
   if (video.readyState < 2) {
-    $('giftCamera').querySelector('p').textContent = 'Camera ready ho rahi hai, ek second baad photo lo.';
+    $('giftCamera').querySelector('p').textContent = 'Camera ready ho raha hai, ek second baad photo lo.';
     return;
   }
 
