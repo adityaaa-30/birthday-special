@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -58,21 +58,7 @@
   </div>
 </div>
 
-<!-- ===== PHASE 4: SCRATCH ===== -->
-<div class="phase hidden" id="scratch-phase">
-  <div class="phase-card">
-    <h2>💌 Scratch Surprise 💌</h2>
-    <p>Rub the card with your finger to reveal a hidden message.</p>
-    <div class="scratch-wrap">
-      <div class="scratch-secret">You're the most important person in my entire life 💖</div>
-      <canvas id="scratchCanvas" aria-label="Scratch to reveal message"></canvas>
-    </div>
-    <div class="scratch-progress" id="scratchProgress">Scratch 0% revealed</div>
-    <button class="btn locked" id="scratchNextBtn">Unlocked Soon...</button>
-  </div>
-</div>
-
-<!-- ===== PHASE 5: CAKE ===== -->
+<!-- ===== PHASE 4: CAKE ===== -->
 <div class="phase hidden" id="cake-phase">
   <div class="phase-card">
     <h2>🎂 Birthday Cake 🎂</h2>
@@ -89,12 +75,12 @@
   </div>
 </div>
 
-<!-- ===== PHASE 6: COUNTDOWN ===== -->
+<!-- ===== PHASE 5: COUNTDOWN ===== -->
 <div class="phase hidden" id="countdown-phase">
   <div class="countdown-number" id="countdownNumber">3</div>
 </div>
 
-<!-- ===== PHASE 7: BALLOONS ===== -->
+<!-- ===== PHASE 6: BALLOONS ===== -->
 <div class="phase hidden" id="balloon-phase">
   <div class="phase-card">
     <h2>🎈 Fly Balloons! 🎈</h2>
@@ -104,24 +90,40 @@
   <div class="balloon-hint" id="balloonHint">👆 Tap balloons to pop them!</div>
 </div>
 
-<!-- ===== PHASE 8: MESSAGE + MEMORIES ===== -->
+<!-- ===== PHASE 7: MESSAGE + MEMORIES ===== -->
 <div class="phase hidden" id="msg-phase">
   <div class="phase-card">
     <h2>💖 Happy Birthday! 💖</h2>
     <p class="msg-text type-cursor" id="finalMessage"></p>
     <div class="final-memories">
-      <h3>Little Polaroids</h3>
-      <p>Three tiny moments I would keep on my wall forever.</p>
-      <div class="memory-stage" id="memoryStage">
-        <div class="memory-photo"><img src="photo1.jpg" alt="Memory photo 1"><span>my favorite smile</span></div>
-        <div class="memory-photo"><img src="photo2.jpg" alt="Memory photo 2"><span>this little moment</span></div>
-        <div class="memory-photo"><img src="photo3.jpg" alt="Memory photo 3"><span>best day ever</span></div>
+      <button class="btn memory-start hidden" id="memoryStartBtn">Start Our Flashback</button>
+      <div class="memory-stage hidden" id="memoryStage">
+        <div class="flashback-card" id="flashbackCard">
+          <img id="flashbackPhoto" src="" alt="Flashback memory">
+          <span id="flashbackCaption">memory 1</span>
+        </div>
+        <div class="flashback-counter" id="flashbackCounter">1 / 15</div>
       </div>
     </div>
     <div class="signature">— your Aditya 💕</div>
     <div class="gift-reveal" id="giftReveal">
       <span>The real surprise is waiting</span>
       <strong>Now open your gift, cutie</strong>
+    </div>
+    <div class="gift-check hidden" id="giftCheck">
+      <button class="btn gift-open-btn" id="giftOpenBtn">I opened my gift 🎁</button>
+      <div class="gift-camera hidden" id="giftCamera">
+        <p>One cute verification pic, then rate this surprise.</p>
+        <video id="giftVideo" autoplay playsinline></video>
+        <canvas id="giftCanvas" class="hidden"></canvas>
+        <img id="giftPhoto" class="hidden" alt="Gift verification capture">
+        <button class="btn" id="captureGiftBtn">Take Verification Pic</button>
+        <div class="gift-review hidden" id="giftReview">
+          <span>How was it out of 10?</span>
+          <div class="rating-row" id="ratingRow"></div>
+          <strong id="ratingThanks"></strong>
+        </div>
+      </div>
     </div>
   </div>
 </div>

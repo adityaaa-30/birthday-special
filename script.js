@@ -6,9 +6,9 @@ const $ = id => document.getElementById(id);
 const rand = (a, b) => Math.random() * (b - a) + a;
 const randInt = (a, b) => Math.floor(rand(a, b));
 
- const celebrationUnlockAt = Date.UTC(2026, 4, 15, 18, 30, 0); // 16 May 2026, 12:00 AM IST
+// const celebrationUnlockAt = Date.UTC(2026, 4, 15, 18, 30, 0); // 16 May 2026, 12:00 AM IST
 // Testing bypass: comment the line above and uncomment this line to open the site instantly.
-// const celebrationUnlockAt = Date.now() - 1000;
+ const celebrationUnlockAt = Date.now() - 1000;
 let celebrationGateTimer = null;
 
 const isLowMotionDevice = window.matchMedia('(max-width: 640px)').matches || navigator.hardwareConcurrency <= 4;
@@ -281,14 +281,32 @@ function playHappyBirthday() {
   melody.forEach(([f, s, d]) => playTone(f, s, d, 'triangle', .28));
 }
 
-const customSong = new Audio('song.mp3');
-customSong.preload = 'auto';
+const musicTrack = new Audio('song1.mp3');
+const flashbackTrack = new Audio('song2.mp3');
+musicTrack.preload = 'auto';
+flashbackTrack.preload = 'auto';
+
+function stopAudioTrack(track) {
+  track.pause();
+  track.currentTime = 0;
+}
+
+function playAudioTrack(track, volume = .85) {
+  [musicTrack, flashbackTrack].forEach(activeTrack => {
+    if (activeTrack !== track) stopAudioTrack(activeTrack);
+  });
+  track.currentTime = 0;
+  track.volume = volume;
+  const playPromise = track.play();
+  if (playPromise) playPromise.catch(() => playHappyBirthday());
+}
 
 function playOurSong() {
-  customSong.currentTime = 0;
-  customSong.volume = .85;
-  const playPromise = customSong.play();
-  if (playPromise) playPromise.catch(() => playHappyBirthday());
+  playAudioTrack(musicTrack, .85);
+}
+
+function playFlashbackSong() {
+  playAudioTrack(flashbackTrack, .82);
 }
 
 // =========================================================
@@ -299,7 +317,7 @@ function showPhase(id) {
   $(id).classList.remove('hidden');
   if (id !== 'balloon-phase') $('balloonHint').classList.remove('show');
   if (id === 'balloon-phase') clearFloatingDecorations();
-  if (id === 'scratch-phase') removeDecorTitle();
+  if (id === 'countdown-phase' || id === 'cake-phase') removeDecorTitle();
 }
 
 function clearFloatingDecorations() {
@@ -494,9 +512,8 @@ $('musicBtn').addEventListener('click', () => {
   musicNoteInterval = setInterval(spawnMusicNote, motion.musicNoteInterval);
   startConfetti();
   setTimeout(() => {
-    showPhase('scratch-phase');
-    initScratchCard();
-  }, 320);
+    startCountdown('cake-phase');
+  }, 2000);
   setTimeout(() => {
     clearInterval(musicNoteInterval);
   }, 4000);
@@ -505,136 +522,151 @@ $('musicBtn').addEventListener('click', () => {
 // =========================================================
 //  FINAL MESSAGE MEMORIES
 // =========================================================
-document.querySelectorAll('.memory-photo img').forEach((img, index) => {
-  img.addEventListener('error', () => {
-    img.removeAttribute('src');
-    img.alt = 'Add your own photo here';
-    img.style.display = 'block';
-  });
-  img.addEventListener('load', () => {
-    img.closest('.memory-photo').classList.add('has-photo');
-  });
-});
+const flashbackPhotoFiles = Array.from({ length: 15 }, (_, index) => `photo${index + 1}.jpg`);
+let flashbackPhotos = [];
+let flashbackTimer;
 
-document.querySelectorAll('.memory-photo').forEach(photo => {
-  let drag = null;
-  photo.addEventListener('pointerdown', e => {
-    e.preventDefault();
-    const stage = $('memoryStage').getBoundingClientRect();
-    const rect = photo.getBoundingClientRect();
-    photo.classList.add('dragging');
-    photo.setPointerCapture(e.pointerId);
-    photo.style.left = `${rect.left - stage.left}px`;
-    photo.style.top = `${rect.top - stage.top}px`;
-    photo.style.right = 'auto';
-    drag = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
-  });
-  photo.addEventListener('pointermove', e => {
-    if (!drag) return;
-    const stage = $('memoryStage').getBoundingClientRect();
-    const maxX = stage.width - photo.offsetWidth;
-    const maxY = stage.height - photo.offsetHeight;
-    const x = Math.max(0, Math.min(maxX, e.clientX - stage.left - drag.dx));
-    const y = Math.max(0, Math.min(maxY, e.clientY - stage.top - drag.dy));
-    photo.style.left = `${x}px`;
-    photo.style.top = `${y}px`;
-  });
-  function stopPhotoDrag(e) {
-    if (!drag) return;
-    drag = null;
-    photo.classList.remove('dragging');
-    try { photo.releasePointerCapture(e.pointerId); } catch {}
-  }
-  photo.addEventListener('pointerup', stopPhotoDrag);
-  photo.addEventListener('pointercancel', stopPhotoDrag);
-});
-
-// =========================================================
-//  PHASE 4: SCRATCH SURPRISE
-// =========================================================
-const scratchCanvas = $('scratchCanvas');
-const scratchNextBtn = $('scratchNextBtn');
-const scratchProgress = $('scratchProgress');
-const scratchCtx = scratchCanvas.getContext('2d');
-let scratchReady = false;
-let scratching = false;
-let scratchUnlocked = false;
-
-function initScratchCard() {
-  const rect = scratchCanvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-  scratchCanvas.width = Math.max(1, Math.round(rect.width * dpr));
-  scratchCanvas.height = Math.max(1, Math.round(rect.height * dpr));
-  scratchCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  scratchCtx.globalCompositeOperation = 'source-over';
-  scratchCtx.fillStyle = '#d7d2dc';
-  scratchCtx.fillRect(0, 0, rect.width, rect.height);
-  scratchCtx.fillStyle = '#c71585';
-  scratchCtx.font = '700 18px Poppins, sans-serif';
-  scratchCtx.textAlign = 'center';
-  scratchCtx.fillText('Scratch me 💌', rect.width / 2, rect.height / 2);
-  scratchCtx.globalCompositeOperation = 'destination-out';
-  scratchUnlocked = false;
-  scratchReady = true;
-  scratchProgress.textContent = 'Scratch 0% revealed';
-  scratchNextBtn.textContent = 'Unlocked Soon...';
-  scratchNextBtn.classList.add('locked');
-  scratchNextBtn.classList.remove('ready');
+function revealGiftStep() {
+  $('giftReveal').classList.add('show');
+  $('giftCheck').classList.remove('hidden');
 }
 
-function getScratchPercent() {
-  const image = scratchCtx.getImageData(0, 0, scratchCanvas.width, scratchCanvas.height).data;
-  let clear = 0;
-  for (let i = 3; i < image.length; i += 16) {
-    if (image[i] < 30) clear++;
-  }
-  return Math.round((clear / (image.length / 16)) * 100);
+function preloadFlashbackPhotos() {
+  return Promise.all(flashbackPhotoFiles.map(src => new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(src);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  }))).then(files => files.filter(Boolean));
 }
 
-function scratchAt(e) {
-  if (!scratchReady) return;
-  const rect = scratchCanvas.getBoundingClientRect();
-  scratchCtx.beginPath();
-  scratchCtx.arc(e.clientX - rect.left, e.clientY - rect.top, 30, 0, Math.PI * 2);
-  scratchCtx.fill();
-  const percent = getScratchPercent();
-  scratchProgress.textContent = `Scratch ${Math.min(percent, 100)}% revealed`;
-  if (percent >= 72) {
-    scratchReady = false;
-    scratchUnlocked = true;
-    scratchCtx.clearRect(0, 0, scratchCanvas.width, scratchCanvas.height);
-    scratchProgress.textContent = 'Message fully revealed 💖';
-    scratchNextBtn.textContent = 'Bring the Cake 🎂';
-    scratchNextBtn.classList.remove('locked');
-    scratchNextBtn.classList.add('ready');
-    startConfetti();
-  }
+function showFlashbackFrame(index) {
+  const photo = $('flashbackPhoto');
+  const card = $('flashbackCard');
+  const caption = $('flashbackCaption');
+  const counter = $('flashbackCounter');
+  const src = flashbackPhotos[index];
+
+  card.classList.remove('show');
+  setTimeout(() => {
+    photo.src = src;
+    caption.textContent = `memory ${index + 1}`;
+    counter.textContent = `${index + 1} / ${flashbackPhotos.length}`;
+    card.style.setProperty('--flash-rot', `${rand(-5, 5)}deg`);
+    card.classList.add('show');
+  }, 120);
 }
 
-scratchCanvas.addEventListener('pointerdown', e => {
-  e.preventDefault();
-  scratching = true;
-  scratchCanvas.setPointerCapture(e.pointerId);
-  scratchAt(e);
-});
-scratchCanvas.addEventListener('pointermove', e => {
-  if (!scratching) return;
-  e.preventDefault();
-  scratchAt(e);
-});
-scratchCanvas.addEventListener('pointerup', e => {
-  scratching = false;
-  try { scratchCanvas.releasePointerCapture(e.pointerId); } catch {}
-});
-scratchCanvas.addEventListener('pointercancel', () => { scratching = false; });
+async function startFlashback() {
+  clearInterval(flashbackTimer);
+  $('memoryStartBtn').classList.add('hidden');
+  $('memoryStage').classList.remove('hidden');
+  $('giftReveal').classList.remove('show');
+  playFlashbackSong();
 
-scratchNextBtn.addEventListener('click', () => {
-  if (!scratchUnlocked) {
-    scratchProgress.textContent = 'Reveal more of the card first 💌';
+  if (!flashbackPhotos.length) flashbackPhotos = await preloadFlashbackPhotos();
+  if (!flashbackPhotos.length) {
+    $('flashbackCaption').textContent = 'Add photo1.jpg to photo15.jpg here';
+    revealGiftStep();
     return;
   }
-  showPhase('cake-phase');
+
+  let index = 0;
+  showFlashbackFrame(index);
+  flashbackTimer = setInterval(() => {
+    index++;
+    if (index >= flashbackPhotos.length) {
+      clearInterval(flashbackTimer);
+      setTimeout(revealGiftStep, 900);
+      return;
+    }
+    showFlashbackFrame(index);
+  }, 1700);
+}
+
+$('memoryStartBtn').addEventListener('click', startFlashback);
+
+// =========================================================
+//  GIFT UNBOX VERIFICATION
+// =========================================================
+let giftStream = null;
+const ratingOptions = [
+  [1, '😭'], [2, '😢'], [3, '😕'], [4, '🙂'], [5, '😊'],
+  [6, '😄'], [7, '😍'], [8, '🥰'], [9, '🤩'], [10, '💖']
+];
+
+ratingOptions.forEach(([score, emoji]) => {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'rating-btn';
+  btn.textContent = `${emoji} ${score}`;
+  btn.setAttribute('aria-label', `${score} out of 10`);
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.rating-btn').forEach(item => item.classList.remove('selected'));
+    btn.classList.add('selected');
+    $('ratingThanks').textContent = `${emoji} ${score}/10 saved in my heart. Thank you, cutie.`;
+    startConfetti();
+  });
+  $('ratingRow').appendChild(btn);
 });
+
+async function openGiftCamera() {
+  $('giftOpenBtn').classList.add('hidden');
+  $('giftCamera').classList.remove('hidden');
+  $('giftVideo').classList.remove('hidden');
+  $('giftPhoto').classList.add('hidden');
+  $('captureGiftBtn').classList.remove('hidden');
+  $('ratingThanks').textContent = '';
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    $('giftCamera').querySelector('p').textContent = 'Camera is not available here. Please open this page in Chrome/Edge and allow camera access.';
+    $('giftVideo').classList.add('hidden');
+    $('captureGiftBtn').classList.add('hidden');
+    $('giftReview').classList.remove('hidden');
+    return;
+  }
+
+  try {
+    giftStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    $('giftVideo').srcObject = giftStream;
+  } catch {
+    $('giftCamera').querySelector('p').textContent = 'Camera permission nahi mili, but review de sakti ho.';
+    $('giftVideo').classList.add('hidden');
+    $('captureGiftBtn').classList.add('hidden');
+    $('giftReview').classList.remove('hidden');
+  }
+}
+
+function captureGiftPhoto() {
+  const video = $('giftVideo');
+  const canvas = $('giftCanvas');
+  const photo = $('giftPhoto');
+  const width = video.videoWidth || 640;
+  const height = video.videoHeight || 480;
+
+  if (video.readyState < 2) {
+    $('giftCamera').querySelector('p').textContent = 'Camera ready ho rahi hai, ek second baad photo lo.';
+    return;
+  }
+
+  canvas.width = width;
+  canvas.height = height;
+  canvas.getContext('2d').drawImage(video, 0, 0, width, height);
+  photo.src = canvas.toDataURL('image/jpeg', .9);
+  photo.classList.remove('hidden');
+  video.classList.add('hidden');
+  $('captureGiftBtn').classList.add('hidden');
+  $('giftReview').classList.remove('hidden');
+
+  if (giftStream) {
+    giftStream.getTracks().forEach(track => track.stop());
+    giftStream = null;
+  }
+  startConfetti();
+}
+
+$('giftOpenBtn').addEventListener('click', openGiftCamera);
+$('captureGiftBtn').addEventListener('click', captureGiftPhoto);
 
 // =========================================================
 //  FLOATING WISHES AFTER CANDLES
@@ -668,21 +700,35 @@ function launchFloatingWishes() {
 
   setTimeout(() => {
     $('cakeHint').textContent = 'All my wishes are flying to you.';
-    $('cakeNextBtn').textContent = 'Final Countdown ✨';
-    $('cakeNextBtn').classList.remove('locked');
-    $('cakeNextBtn').classList.add('ready');
+    $('cakeNextBtn').textContent = 'Balloons are coming...';
     startConfetti();
+    setTimeout(() => showPhase('balloon-phase'), 1200);
   }, wishes.length * 650 + 2600);
 }
 
 // =========================================================
-//  PHASE 5: CAKE
+//  PHASE 4: CAKE
 // =========================================================
 let cakeBlown = false;
 let cakeBreeze = 0;
 let cakePointerActive = false;
 let lastCakePoint = null;
 let floatingWishesStarted = false;
+
+function initCakePhase() {
+  cakeBlown = false;
+  cakeBreeze = 0;
+  cakePointerActive = false;
+  lastCakePoint = null;
+  floatingWishesStarted = false;
+  $('cake').classList.remove('blown', 'fanning');
+  document.querySelectorAll('#cake .candle').forEach(candle => candle.classList.remove('out'));
+  $('micMeter').style.width = '0%';
+  $('cakeHint').textContent = 'Make a wish, then swipe gently over the candles.';
+  $('cakeNextBtn').textContent = 'Swipe Candles';
+  $('cakeNextBtn').classList.add('locked');
+  $('cakeNextBtn').classList.remove('ready');
+}
 
 function blowOutCandles() {
   if (cakeBlown) return;
@@ -769,9 +815,9 @@ $('cakeNextBtn').addEventListener('click', () => {
   startCountdown();
 });
 
-function startCountdown() {
+function startCountdown(nextPhase = 'balloon-phase') {
   showPhase('countdown-phase');
-  const nums = ['3', '2', '1', '💖'];
+  const nums = ['3', '2', '1'];
   let index = 0;
   const tick = () => {
     $('countdownNumber').textContent = nums[index];
@@ -779,16 +825,17 @@ function startCountdown() {
     void $('countdownNumber').offsetWidth;
     $('countdownNumber').style.animation = 'countdownPop .8s ease-out';
     index++;
-    if (index < nums.length) setTimeout(tick, 850);
+    if (index < nums.length) setTimeout(tick, 1000);
     else setTimeout(() => {
-      showPhase('balloon-phase');
-    }, 900);
+      showPhase(nextPhase);
+      if (nextPhase === 'cake-phase') initCakePhase();
+    }, 650);
   };
   tick();
 }
 
 // =========================================================
-//  PHASE 4: BALLOONS
+//  PHASE 6: BALLOONS
 // =========================================================
 const balloonColors = [
   '#ff6b6b','#ff69b4','#ffd93d','#6bcbff','#a78bfa','#34d399','#fb923c','#f472b6'
@@ -881,7 +928,7 @@ $('balloonBtn').addEventListener('click', () => {
 });
 
 // =========================================================
-//  PHASE 5: MESSAGE + final confetti
+//  PHASE 7: MESSAGE + final confetti
 // =========================================================
 const finalMessageText = `Happy 18th Birthday, Ragini.
 
@@ -900,10 +947,14 @@ let typewriterTimer;
 function startTypewriterMessage() {
   const el = $('finalMessage');
   const giftReveal = $('giftReveal');
+  const memoryStartBtn = $('memoryStartBtn');
   clearInterval(typewriterTimer);
   el.textContent = '';
   el.classList.add('type-cursor');
   giftReveal.classList.remove('show');
+  $('giftCheck').classList.add('hidden');
+  memoryStartBtn.classList.add('hidden');
+  $('memoryStage').classList.add('hidden');
   let i = 0;
   typewriterTimer = setInterval(() => {
     el.textContent += finalMessageText[i] || '';
@@ -911,7 +962,7 @@ function startTypewriterMessage() {
     if (i >= finalMessageText.length) {
       clearInterval(typewriterTimer);
       setTimeout(() => el.classList.remove('type-cursor'), 700);
-      setTimeout(() => giftReveal.classList.add('show'), 900);
+      setTimeout(() => memoryStartBtn.classList.remove('hidden'), 900);
     }
   }, 28);
 }
@@ -922,5 +973,6 @@ function startFinalConfetti() {
   // play melody again softly
   playHappyBirthday();
 }
+
 
 
