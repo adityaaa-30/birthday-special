@@ -1038,6 +1038,24 @@
     font-size: .95rem;
     line-height: 1.4;
   }
+  #giftSubmitStatus {
+    display: block;
+    min-height: 1.2rem;
+    margin-top: .45rem;
+    color: rgba(255,228,240,.88);
+    font-size: .78rem;
+    line-height: 1.4;
+  }
+  #giftSubmitStatus[data-type="success"] {
+    color: #b8ffd6;
+    text-shadow: 0 0 12px rgba(52,211,153,.5);
+  }
+  #giftSubmitStatus[data-type="warn"] {
+    color: #ffe0a3;
+  }
+  #giftSubmitStatus[data-type="error"] {
+    color: #ffb3c7;
+  }
 
   /* ---- MUSIC NOTE BOUNCE ---- */
   .music-note {

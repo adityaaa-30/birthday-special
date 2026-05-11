@@ -589,11 +589,97 @@ $('memoryStartBtn').addEventListener('click', startFlashback);
 // =========================================================
 //  GIFT UNBOX VERIFICATION
 // =========================================================
+const supabaseConfig = {
+  url: 'https://tujjwkxkordwxnegrarb.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1amp3a3hrb3Jkd3huZWdyYXJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NzU2MDAsImV4cCI6MjA5NDA1MTYwMH0.rXvQaPe5nl-7w-pBuf6lQZC1yIYleMv9L9Ot2ERPB9M',
+  bucket: 'gift-photos',
+  table: 'gift_reviews'
+};
+
 let giftStream = null;
+let giftCapturedBlob = null;
+let giftSubmitting = false;
 const ratingOptions = [
   [1, '😭'], [2, '😢'], [3, '😕'], [4, '🙂'], [5, '😊'],
   [6, '😄'], [7, '😍'], [8, '🥰'], [9, '🤩'], [10, '💖']
 ];
+
+function isSupabaseConfigured() {
+  return supabaseConfig.url.startsWith('https://') && supabaseConfig.anonKey.length > 20;
+}
+
+function dataUrlToBlob(dataUrl) {
+  const [header, base64] = dataUrl.split(',');
+  const mime = header.match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
+function setGiftSubmitStatus(message, type = '') {
+  const status = $('giftSubmitStatus');
+  status.textContent = message;
+  status.dataset.type = type;
+}
+
+async function submitGiftReview(score, emoji) {
+  if (giftSubmitting) return;
+
+  if (!isSupabaseConfigured()) {
+    setGiftSubmitStatus('Supabase config add karne ke baad photo/rating Aditya ke dashboard me save hogi.', 'warn');
+    return;
+  }
+
+  giftSubmitting = true;
+  setGiftSubmitStatus('Sending photo and rating to Aditya...', 'loading');
+
+  try {
+    const safeTime = new Date().toISOString().replace(/[:.]/g, '-');
+    const photoPath = giftCapturedBlob ? `ragini-gift-${safeTime}.jpg` : null;
+    let photoUrl = '';
+
+    if (giftCapturedBlob) {
+      const uploadUrl = `${supabaseConfig.url}/storage/v1/object/${supabaseConfig.bucket}/${photoPath}`;
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          apikey: supabaseConfig.anonKey,
+          Authorization: `Bearer ${supabaseConfig.anonKey}`,
+          'Content-Type': 'image/jpeg',
+          'x-upsert': 'false'
+        },
+        body: giftCapturedBlob
+      });
+      if (!uploadResponse.ok) throw new Error('Photo upload failed');
+      photoUrl = `${supabaseConfig.url}/storage/v1/object/public/${supabaseConfig.bucket}/${photoPath}`;
+    }
+
+    const saveResponse = await fetch(`${supabaseConfig.url}/rest/v1/${supabaseConfig.table}`, {
+      method: 'POST',
+      headers: {
+        apikey: supabaseConfig.anonKey,
+        Authorization: `Bearer ${supabaseConfig.anonKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({
+        rating: score,
+        emoji,
+        photo_path: photoPath,
+        photo_url: photoUrl,
+        user_agent: navigator.userAgent
+      })
+    });
+    if (!saveResponse.ok) throw new Error('Rating save failed');
+
+    setGiftSubmitStatus('Sent to Aditya. Ab woh photo aur rating dekh payega 💖', 'success');
+  } catch {
+    setGiftSubmitStatus('Send nahi ho paya. Internet/config check karke dobara rating tap karo.', 'error');
+  } finally {
+    giftSubmitting = false;
+  }
+}
 
 ratingOptions.forEach(([score, emoji]) => {
   const btn = document.createElement('button');
@@ -604,7 +690,8 @@ ratingOptions.forEach(([score, emoji]) => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.rating-btn').forEach(item => item.classList.remove('selected'));
     btn.classList.add('selected');
-    $('ratingThanks').textContent = `${emoji} ${score}/10 saved in my heart. Thank you, cutie.`;
+    $('ratingThanks').textContent = `${emoji} ${score}/10 selected. Thank you, cutie.`;
+    submitGiftReview(score, emoji);
     startConfetti();
   });
   $('ratingRow').appendChild(btn);
@@ -617,9 +704,11 @@ async function openGiftCamera() {
   $('giftPhoto').classList.add('hidden');
   $('captureGiftBtn').classList.remove('hidden');
   $('ratingThanks').textContent = '';
+  setGiftSubmitStatus('');
+  giftCapturedBlob = null;
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    $('giftCamera').querySelector('p').textContent = 'Camera is not available here. Please open this page in Chrome/Edge and allow camera access.';
+    $('giftCamera').querySelector('p').textContent = 'Camera available nahi hai. Chrome/Edge me open karke permission allow karo, ya sirf rating de do.';
     $('giftVideo').classList.add('hidden');
     $('captureGiftBtn').classList.add('hidden');
     $('giftReview').classList.remove('hidden');
@@ -627,10 +716,10 @@ async function openGiftCamera() {
   }
 
   try {
-    giftStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    giftStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
     $('giftVideo').srcObject = giftStream;
   } catch {
-    $('giftCamera').querySelector('p').textContent = 'Camera permission nahi mili, but review de sakti ho.';
+    $('giftCamera').querySelector('p').textContent = 'Camera permission nahi mili, but rating de sakti ho.';
     $('giftVideo').classList.add('hidden');
     $('captureGiftBtn').classList.add('hidden');
     $('giftReview').classList.remove('hidden');
@@ -653,6 +742,7 @@ function captureGiftPhoto() {
   canvas.height = height;
   canvas.getContext('2d').drawImage(video, 0, 0, width, height);
   photo.src = canvas.toDataURL('image/jpeg', .9);
+  giftCapturedBlob = dataUrlToBlob(photo.src);
   photo.classList.remove('hidden');
   video.classList.add('hidden');
   $('captureGiftBtn').classList.add('hidden');
