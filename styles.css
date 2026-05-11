@@ -698,7 +698,7 @@
     position: relative;
     width: min(78vw, 330px);
     aspect-ratio: 3 / 4;
-    padding: .68rem .68rem 2.85rem;
+    padding: .68rem;
     border-radius: 10px;
     background: linear-gradient(180deg, #fff, #fff7fb);
     color: #c71585;
@@ -732,14 +732,6 @@
     border-radius: 6px;
     background: linear-gradient(135deg, #ffb3d9, #ffd6ec, #7b68ee);
     pointer-events: none;
-  }
-  .flashback-card span {
-    position: absolute;
-    left: .65rem; right: .65rem; bottom: .55rem;
-    font-family: 'Dancing Script', cursive;
-    font-size: 1.42rem;
-    text-align: center;
-    line-height: 1.1;
   }
   .flashback-counter {
     position: absolute;
@@ -1201,8 +1193,7 @@
       max-width: 360px;
     }
     .memory-stage { width: 100%; min-height: 390px; }
-    .flashback-card { width: min(72vw, 245px); padding: .55rem .55rem 2.25rem; }
-    .flashback-card span { font-size: 1.12rem; }
+    .flashback-card { width: min(72vw, 245px); padding: .55rem; }
     .flashback-counter { right: .75rem; bottom: .75rem; }
     .cake { width: min(82vw, 300px); height: 270px; margin-top: .2rem; }
     .candle { bottom: 197px; height: 50px; }

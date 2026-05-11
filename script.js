@@ -637,14 +637,12 @@ function preloadFlashbackPhotos() {
 function showFlashbackFrame(index) {
   const photo = $('flashbackPhoto');
   const card = $('flashbackCard');
-  const caption = $('flashbackCaption');
   const counter = $('flashbackCounter');
   const src = flashbackPhotos[index];
 
   card.classList.remove('show');
   setTimeout(() => {
     photo.src = src;
-    caption.textContent = `memory ${index + 1}`;
     counter.textContent = `${index + 1} / ${flashbackPhotos.length}`;
     card.style.setProperty('--flash-rot', `${rand(-5, 5)}deg`);
     card.classList.add('show');
@@ -660,7 +658,7 @@ async function startFlashback() {
 
   if (!flashbackPhotos.length) flashbackPhotos = await preloadFlashbackPhotos();
   if (!flashbackPhotos.length) {
-    $('flashbackCaption').textContent = 'Add photo1.jpg to photo15.jpg here';
+    $('flashbackCounter').textContent = 'Add photo1.jpg to photo15.jpg here';
     revealGiftStep();
     return;
   }
@@ -1118,17 +1116,18 @@ $('balloonBtn').addEventListener('click', () => {
 // =========================================================
 const finalMessageText = `Happy 18th Birthday, Ragini.
 
-Aaj tum officially 18 ki ho gayi, but mere liye tum wahi ho jiski smile dekh ke din better ho jata hai.
+Aaj tum officially 18 ki ho gayi, but mere liye tum aaj bhi wahi ho jiski smile dekh ke mera din best ho jata hai.
 
-I don't know perfect words kaise likhte hain, par itna sach hai ki tum meri life ka bahut special part ho. Tumhari chhoti chhoti baatein, tumhara mood, tumhari hansi, sab ek special moment hai mere liye.
+I don't know perfect words kaise likhte hain, par itna sach hai ki tum meri life ka bahut hi special part ho. Tumhari chhoti chhoti baatein, tumhara mood, tumhari hansi, sab ek special moment hai mere liye jo hamesha mere khayalo mai rehti hai.
 
 Is new year me bas yahi wish hai ki tum khud ko hamesha pyaar se dekho, apne dreams ke liye confident raho khub mehnat karo, aur tumhe woh happiness mile jo tum deserve karti ho hope us se jyada hi.
 
-18th birthday sirf ek number nahi hai, Ragini. Ye tumhari ek new beginning hai. Aur main genuinely chahta hoon ki is beginning me tumhare saath sirf good memories, soft moments, aur bahut saari cheeje create karu.
+18th birthday sirf ek number nahi hai, Ye tumhari ek new beginning hai. Aur main genuinely chahta hoon ki is beginning me tumhare saath sirf good memories, soft moments, aur bahut saari cheeje create karu.
 
-haa pichle 2.5 months se hamare beech sab kuch utna acha nahi hai lekin mai tumhare saath hi reh ke sab thik krna chahta hoon.
+haa pichle 2.5 months se hamare beech sab kuch utna acha nahi hai lekin mai sab bhula ke tumhare saath ek new start krna chahta hoon.
 
 Happy Birthday, meri fineshyyt💘.
+Love you so much, and ever ever and forver🫀.
 Tum ho to sab kuch thoda zyada beautiful lagta hai.`;
 
 let typewriterTimer;
