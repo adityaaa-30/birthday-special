@@ -110,11 +110,19 @@
       </div>
     </div>
     <div class="signature">— your Aditya 💕</div>
+  </div>
+</div>
+
+<!-- ===== PHASE 8: GIFT RATING ===== -->
+<div class="phase hidden" id="gift-phase">
+  <div class="phase-card gift-phase-card">
+    <h2>🎁 Open Your Gift 🎁</h2>
+    <p>The real surprise is waiting. Gift open karne ke baad uski ek cute pic click karo, phir surprise ko rate karo.</p>
     <div class="gift-reveal" id="giftReveal">
       <span>The real surprise is waiting</span>
       <strong>Now open your gift, cutie</strong>
     </div>
-    <div class="gift-check hidden" id="giftCheck">
+    <div class="gift-check" id="giftCheck">
       <button class="btn gift-open-btn" id="giftOpenBtn">I opened my gift 🎁</button>
       <div class="gift-camera hidden" id="giftCamera">
         <p>Gift open karne ke baad uski ek cute pic click karo, phir surprise ko rate karo.</p>
@@ -122,6 +130,11 @@
         <canvas id="giftCanvas" class="hidden"></canvas>
         <img id="giftPhoto" class="hidden" alt="Opened gift capture">
         <button class="btn" id="captureGiftBtn">Click Gift Pic</button>
+        <div class="photo-actions hidden" id="photoActions">
+          <button class="btn secondary-btn" id="reclickGiftBtn" type="button">Reclick Photo</button>
+          <button class="btn secondary-btn" id="uploadGiftBtn" type="button">Upload Photo</button>
+          <input class="hidden" id="giftUploadInput" type="file" accept="image/*">
+        </div>
         <div class="gift-review hidden" id="giftReview">
           <span>How was it out of 10?</span>
           <div class="rating-row" id="ratingRow"></div>

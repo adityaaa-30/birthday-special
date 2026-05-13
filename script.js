@@ -549,7 +549,7 @@ $('decorateBtn').addEventListener('click', () => {
 // keep a few floating in background
 function keepFloating() {
   setInterval(() => {
-    if (!$('balloon-phase').classList.contains('hidden') || !$('msg-phase').classList.contains('hidden')) return;
+    if (!$('balloon-phase').classList.contains('hidden') || !$('msg-phase').classList.contains('hidden') || !$('gift-phase').classList.contains('hidden')) return;
     if (persistentDecorations < motion.maxBackgroundDecorations) spawnFloatItem(true);
   }, motion.backgroundDecorInterval);
 }
@@ -618,8 +618,8 @@ let flashbackTimer;
 
 function revealGiftStep() {
   stopAudioTrack(flashbackTrack);
+  showPhase('gift-phase');
   $('giftReveal').classList.add('show');
-  $('giftCheck').classList.remove('hidden');
   setTimeout(() => {
     $('giftOpenBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, 250);
@@ -728,7 +728,9 @@ async function submitGiftReview(score, emoji) {
 
   try {
     const safeTime = new Date().toISOString().replace(/[:.]/g, '-');
-    const photoPath = giftCapturedBlob ? `ragini-gift-${safeTime}.jpg` : null;
+    const giftMime = giftCapturedBlob?.type || 'image/jpeg';
+    const giftExt = giftMime.includes('png') ? 'png' : giftMime.includes('webp') ? 'webp' : 'jpg';
+    const photoPath = giftCapturedBlob ? `ragini-gift-${safeTime}.${giftExt}` : null;
     let photoUrl = '';
 
     if (giftCapturedBlob) {
@@ -738,7 +740,7 @@ async function submitGiftReview(score, emoji) {
         headers: {
           apikey: supabaseConfig.anonKey,
           Authorization: `Bearer ${supabaseConfig.anonKey}`,
-          'Content-Type': 'image/jpeg',
+          'Content-Type': giftMime,
           'x-upsert': 'false'
         },
         body: giftCapturedBlob
@@ -773,6 +775,31 @@ async function submitGiftReview(score, emoji) {
   }
 }
 
+function stopGiftStream() {
+  if (!giftStream) return;
+  giftStream.getTracks().forEach(track => track.stop());
+  giftStream = null;
+}
+
+function resetGiftReviewSelection() {
+  document.querySelectorAll('.rating-btn').forEach(item => item.classList.remove('selected'));
+  $('ratingThanks').textContent = '';
+  setGiftSubmitStatus('');
+}
+
+function showGiftPhotoPreview(src, blob) {
+  const photo = $('giftPhoto');
+  photo.src = src;
+  giftCapturedBlob = blob;
+  photo.classList.remove('hidden');
+  $('giftVideo').classList.add('hidden');
+  $('captureGiftBtn').classList.add('hidden');
+  $('photoActions').classList.remove('hidden');
+  $('giftReview').classList.remove('hidden');
+  $('giftCamera').querySelector('p').textContent = 'Photo preview check kar lo. Agar photo clear nahi hai to reclick karo, ya gallery se upload kar do.';
+  resetGiftReviewSelection();
+}
+
 ratingOptions.forEach(([score, emoji]) => {
   const btn = document.createElement('button');
   btn.type = 'button';
@@ -795,14 +822,18 @@ async function openGiftCamera() {
   $('giftVideo').classList.remove('hidden');
   $('giftPhoto').classList.add('hidden');
   $('captureGiftBtn').classList.remove('hidden');
-  $('ratingThanks').textContent = '';
-  setGiftSubmitStatus('');
+  $('photoActions').classList.add('hidden');
+  $('giftReview').classList.add('hidden');
+  $('giftCamera').querySelector('p').textContent = 'Gift open karne ke baad uski ek cute pic click karo, phir surprise ko rate karo.';
+  resetGiftReviewSelection();
   giftCapturedBlob = null;
+  stopGiftStream();
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    $('giftCamera').querySelector('p').textContent = 'Camera available nahi hai. Chrome/Edge me open karke permission allow karo, ya sirf rating de do.';
+    $('giftCamera').querySelector('p').textContent = 'Camera available nahi hai. Chrome/Edge me open karke permission allow karo, ya gallery se photo upload kar do.';
     $('giftVideo').classList.add('hidden');
     $('captureGiftBtn').classList.add('hidden');
+    $('photoActions').classList.remove('hidden');
     $('giftReview').classList.remove('hidden');
     return;
   }
@@ -811,9 +842,10 @@ async function openGiftCamera() {
     giftStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
     $('giftVideo').srcObject = giftStream;
   } catch {
-    $('giftCamera').querySelector('p').textContent = 'Camera permission nahi mili, but rating de sakti ho.';
+    $('giftCamera').querySelector('p').textContent = 'Camera permission nahi mili, but gallery se photo upload kar sakti ho.';
     $('giftVideo').classList.add('hidden');
     $('captureGiftBtn').classList.add('hidden');
+    $('photoActions').classList.remove('hidden');
     $('giftReview').classList.remove('hidden');
   }
 }
@@ -821,7 +853,6 @@ async function openGiftCamera() {
 function captureGiftPhoto() {
   const video = $('giftVideo');
   const canvas = $('giftCanvas');
-  const photo = $('giftPhoto');
   const width = video.videoWidth || 640;
   const height = video.videoHeight || 480;
 
@@ -833,22 +864,30 @@ function captureGiftPhoto() {
   canvas.width = width;
   canvas.height = height;
   canvas.getContext('2d').drawImage(video, 0, 0, width, height);
-  photo.src = canvas.toDataURL('image/jpeg', .9);
-  giftCapturedBlob = dataUrlToBlob(photo.src);
-  photo.classList.remove('hidden');
-  video.classList.add('hidden');
-  $('captureGiftBtn').classList.add('hidden');
-  $('giftReview').classList.remove('hidden');
+  const dataUrl = canvas.toDataURL('image/jpeg', .9);
+  showGiftPhotoPreview(dataUrl, dataUrlToBlob(dataUrl));
+  stopGiftStream();
+  startConfetti();
+}
 
-  if (giftStream) {
-    giftStream.getTracks().forEach(track => track.stop());
-    giftStream = null;
-  }
+function uploadGiftPhoto() {
+  $('giftUploadInput').value = '';
+  $('giftUploadInput').click();
+}
+
+function handleGiftUpload(e) {
+  const file = e.target.files?.[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  stopGiftStream();
+  showGiftPhotoPreview(URL.createObjectURL(file), file);
   startConfetti();
 }
 
 $('giftOpenBtn').addEventListener('click', openGiftCamera);
 $('captureGiftBtn').addEventListener('click', captureGiftPhoto);
+$('reclickGiftBtn').addEventListener('click', openGiftCamera);
+$('uploadGiftBtn').addEventListener('click', uploadGiftPhoto);
+$('giftUploadInput').addEventListener('change', handleGiftUpload);
 
 // =========================================================
 //  FLOATING WISHES AFTER CANDLES
@@ -1140,7 +1179,6 @@ function startTypewriterMessage() {
   el.textContent = '';
   el.classList.add('type-cursor');
   giftReveal.classList.remove('show');
-  $('giftCheck').classList.add('hidden');
   memoryStartBtn.classList.add('hidden');
   $('memoryStage').classList.add('hidden');
   let i = 0;
