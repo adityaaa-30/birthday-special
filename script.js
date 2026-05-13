@@ -5,6 +5,18 @@
 const $ = id => document.getElementById(id);
 const rand = (a, b) => Math.random() * (b - a) + a;
 const randInt = (a, b) => Math.floor(rand(a, b));
+const phaseStorageKey = 'birthday-current-phase';
+const heartStorageKey = 'birthday-heart-unlocked';
+const giftStepStorageKey = 'birthday-gift-step';
+const restorablePhases = ['landing', 'decorate-phase', 'music-phase', 'cake-phase', 'balloon-phase', 'msg-phase', 'gift-phase'];
+
+function saveLocal(key, value) {
+  try { localStorage.setItem(key, value); } catch {}
+}
+
+function readLocal(key) {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
 
 // const celebrationUnlockAt = Date.UTC(2026, 4, 15, 18, 30, 0); // 16 May 2026, 12:00 AM IST
 // Testing bypass: comment the line above and uncomment this line to open the site instantly.
@@ -45,8 +57,7 @@ function updateCelebrationGate() {
     return;
   }
   if (celebrationGateTimer) clearInterval(celebrationGateTimer);
-  showPhase('landing');
-  requestAnimationFrame(resizeHeartCanvas);
+  restoreSavedPhase();
 }
 
 function initCelebrationGate() {
@@ -154,8 +165,17 @@ function revealStartButton() {
   drawHint.textContent = 'Perfect! Now start the celebration 💖';
   startBtn.classList.remove('locked');
   startBtn.classList.add('ready');
+  saveLocal(heartStorageKey, 'true');
   for (let i = 0; i < motion.heartSparkles; i++) setTimeout(() => spawnTouchSparkle(innerWidth / 2 + rand(-90, 90), innerHeight / 2 + rand(-90, 90)), i * 45);
   startConfetti();
+}
+
+function restoreHeartUnlockedState() {
+  heartUnlocked = true;
+  heartDraw.classList.add('complete');
+  drawHint.textContent = 'Perfect! Now start the celebration 💖';
+  startBtn.classList.remove('locked');
+  startBtn.classList.add('ready');
 }
 
 function checkHeartDrawing() {
@@ -182,7 +202,6 @@ function checkHeartDrawing() {
 
 resizeHeartCanvas();
 window.addEventListener('resize', resizeHeartCanvas);
-initCelebrationGate();
 
 heartCanvas.addEventListener('pointerdown', e => {
   if (heartUnlocked) return;
@@ -399,9 +418,24 @@ updateAudioToggle();
 function showPhase(id) {
   document.querySelectorAll('.phase').forEach(p => p.classList.add('hidden'));
   $(id).classList.remove('hidden');
+  if (restorablePhases.includes(id)) saveLocal(phaseStorageKey, id);
   if (id !== 'balloon-phase') $('balloonHint').classList.remove('show');
   if (id === 'balloon-phase') clearFloatingDecorations();
   if (id === 'countdown-phase' || id === 'cake-phase') removeDecorTitle();
+}
+
+function restoreSavedPhase() {
+  const savedPhase = readLocal(phaseStorageKey);
+  const phase = restorablePhases.includes(savedPhase) ? savedPhase : 'landing';
+  showPhase(phase);
+
+  if (phase === 'landing') {
+    requestAnimationFrame(resizeHeartCanvas);
+    if (readLocal(heartStorageKey) === 'true') restoreHeartUnlockedState();
+  }
+  if (phase === 'cake-phase') initCakePhase();
+  if (phase === 'msg-phase') restoreFinalMessagePhase();
+  if (phase === 'gift-phase') restoreGiftPhase();
 }
 
 function clearFloatingDecorations() {
@@ -618,11 +652,48 @@ let flashbackTimer;
 
 function revealGiftStep() {
   stopAudioTrack(flashbackTrack);
+  stopGiftStream();
   showPhase('gift-phase');
-  $('giftReveal').classList.add('show');
-  setTimeout(() => {
-    $('giftOpenBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 250);
+  saveLocal(giftStepStorageKey, 'experience');
+  $('giftPhaseText').textContent = 'Memories complete ho gayi. Ab mujhe apna experience batao, phir ek last cute surprise step hai.';
+  $('giftExperienceBtn').classList.remove('hidden');
+  $('giftReveal').classList.remove('show', 'countdown-reveal');
+  $('giftCheck').classList.add('hidden');
+  $('giftCamera').classList.add('hidden');
+  $('giftVideo').classList.add('hidden');
+  $('giftPhoto').classList.add('hidden');
+  $('captureGiftBtn').classList.add('hidden');
+  $('photoActions').classList.add('hidden');
+  $('giftReview').classList.add('hidden');
+  resetGiftReviewSelection();
+  giftCapturedBlob = null;
+}
+
+function restoreGiftPhase() {
+  stopGiftStream();
+  $('giftReveal').classList.remove('show', 'countdown-reveal');
+  $('giftCheck').classList.add('hidden');
+  $('giftCamera').classList.add('hidden');
+  $('giftVideo').classList.add('hidden');
+  $('giftPhoto').classList.add('hidden');
+  $('captureGiftBtn').classList.add('hidden');
+  $('photoActions').classList.add('hidden');
+  $('giftReview').classList.add('hidden');
+  resetGiftReviewSelection();
+  giftCapturedBlob = null;
+
+  const giftStep = readLocal(giftStepStorageKey);
+  if (giftStep === 'open-gift' || giftStep === 'camera' || giftStep === 'review') {
+    $('giftPhaseText').textContent = 'Gift open karo, phir uski picture click karke mujhe send karo.';
+    $('giftExperienceBtn').classList.add('hidden');
+    $('giftReveal').classList.add('show');
+    $('giftCheck').classList.remove('hidden');
+    $('giftOpenBtn').classList.remove('hidden');
+    return;
+  }
+
+  $('giftPhaseText').textContent = 'Memories complete ho gayi. Ab mujhe apna experience batao, phir ek last cute surprise step hai.';
+  $('giftExperienceBtn').classList.remove('hidden');
 }
 
 function preloadFlashbackPhotos() {
@@ -788,6 +859,7 @@ function resetGiftReviewSelection() {
 }
 
 function showGiftPhotoPreview(src, blob) {
+  saveLocal(giftStepStorageKey, 'review');
   const photo = $('giftPhoto');
   photo.src = src;
   giftCapturedBlob = blob;
@@ -798,6 +870,23 @@ function showGiftPhotoPreview(src, blob) {
   $('giftReview').classList.remove('hidden');
   $('giftCamera').querySelector('p').textContent = 'Photo preview check kar lo. Agar photo clear nahi hai to reclick karo, ya gallery se upload kar do.';
   resetGiftReviewSelection();
+}
+
+function startGiftExperienceFlow() {
+  saveLocal(giftStepStorageKey, 'open-gift');
+  $('giftExperienceBtn').classList.add('hidden');
+  $('giftPhaseText').textContent = 'Bas ek tiny countdown jaisa moment... phir gift open karna.';
+  $('giftReveal').classList.remove('show', 'countdown-reveal');
+  void $('giftReveal').offsetWidth;
+  $('giftReveal').classList.add('show', 'countdown-reveal');
+  startConfetti();
+
+  setTimeout(() => {
+    $('giftPhaseText').textContent = 'Gift open karo, phir uski picture click karke mujhe send karo.';
+    $('giftCheck').classList.remove('hidden');
+    $('giftOpenBtn').classList.remove('hidden');
+    $('giftOpenBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 2300);
 }
 
 ratingOptions.forEach(([score, emoji]) => {
@@ -817,6 +906,7 @@ ratingOptions.forEach(([score, emoji]) => {
 });
 
 async function openGiftCamera() {
+  saveLocal(giftStepStorageKey, 'camera');
   $('giftOpenBtn').classList.add('hidden');
   $('giftCamera').classList.remove('hidden');
   $('giftVideo').classList.remove('hidden');
@@ -824,7 +914,7 @@ async function openGiftCamera() {
   $('captureGiftBtn').classList.remove('hidden');
   $('photoActions').classList.add('hidden');
   $('giftReview').classList.add('hidden');
-  $('giftCamera').querySelector('p').textContent = 'Gift open karne ke baad uski ek cute pic click karo, phir surprise ko rate karo.';
+  $('giftCamera').querySelector('p').textContent = 'Opened gift ki ek clear pic click karo, phir surprise ko rate karo.';
   resetGiftReviewSelection();
   giftCapturedBlob = null;
   stopGiftStream();
@@ -883,6 +973,7 @@ function handleGiftUpload(e) {
   startConfetti();
 }
 
+$('giftExperienceBtn').addEventListener('click', startGiftExperienceFlow);
 $('giftOpenBtn').addEventListener('click', openGiftCamera);
 $('captureGiftBtn').addEventListener('click', captureGiftPhoto);
 $('reclickGiftBtn').addEventListener('click', openGiftCamera);
@@ -1170,6 +1261,16 @@ Love you so much, and ever ever and forver🫀.
 Tum ho to sab kuch thoda zyada beautiful lagta hai.`;
 
 let typewriterTimer;
+function restoreFinalMessagePhase() {
+  clearInterval(typewriterTimer);
+  stopAudioTrack(finalMessageTrack);
+  $('finalMessage').textContent = finalMessageText;
+  $('finalMessage').classList.remove('type-cursor');
+  $('memoryStartBtn').classList.remove('hidden');
+  $('memoryStage').classList.add('hidden');
+  $('giftReveal').classList.remove('show', 'countdown-reveal');
+}
+
 function startTypewriterMessage() {
   const el = $('finalMessage');
   const giftReveal = $('giftReveal');
@@ -1197,3 +1298,5 @@ function startFinalConfetti() {
   const ci = setInterval(spawnConfetti, motion.finalConfettiInterval);
   setTimeout(() => clearInterval(ci), motion.finalConfettiDuration);
 }
+
+initCelebrationGate();

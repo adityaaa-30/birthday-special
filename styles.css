@@ -993,6 +993,9 @@
     transform: translateY(0) scale(1);
     animation: giftPulse 1.8s ease-in-out .65s infinite;
   }
+  .gift-reveal.countdown-reveal {
+    animation: giftCountdownReveal 2.1s cubic-bezier(.2,.86,.2,1) both, giftPulse 1.8s ease-in-out 2.1s infinite;
+  }
   .gift-reveal span {
     display: block;
     margin-bottom: .18rem;
@@ -1016,6 +1019,12 @@
   @keyframes giftPulse {
     50% { transform: translateY(-4px) scale(1.02); box-shadow: 0 0 38px rgba(255,105,180,.46), 0 14px 30px rgba(0,0,0,.3); }
   }
+  @keyframes giftCountdownReveal {
+    0% { opacity: 0; transform: translateY(18px) scale(.42); filter: blur(10px); }
+    42% { opacity: 1; transform: translateY(0) scale(1.18); filter: blur(0); }
+    68% { transform: translateY(0) scale(.94); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
   .gift-check {
     margin: 1rem auto .2rem;
   }
@@ -1025,6 +1034,10 @@
   }
   .gift-open-btn {
     max-width: 330px;
+  }
+  .gift-experience-btn {
+    max-width: 360px;
+    margin: .15rem auto .9rem;
   }
   .gift-camera {
     margin: 1rem auto .2rem;

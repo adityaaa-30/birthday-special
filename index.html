@@ -116,16 +116,17 @@
 <!-- ===== PHASE 8: GIFT RATING ===== -->
 <div class="phase hidden" id="gift-phase">
   <div class="phase-card gift-phase-card">
-    <h2>🎁 Open Your Gift 🎁</h2>
-    <p>The real surprise is waiting. Gift open karne ke baad uski ek cute pic click karo, phir surprise ko rate karo.</p>
+    <h2>💌 Your Experience 💌</h2>
+    <p id="giftPhaseText">Memories complete ho gayi. Ab mujhe apna experience batao, phir ek last cute surprise step hai.</p>
+    <button class="btn gift-experience-btn" id="giftExperienceBtn" type="button">Give your experience to me</button>
     <div class="gift-reveal" id="giftReveal">
       <span>The real surprise is waiting</span>
       <strong>Now open your gift, cutie</strong>
     </div>
-    <div class="gift-check" id="giftCheck">
-      <button class="btn gift-open-btn" id="giftOpenBtn">I opened my gift 🎁</button>
+    <div class="gift-check hidden" id="giftCheck">
+      <button class="btn gift-open-btn" id="giftOpenBtn">Click picture of opened gift and send to me</button>
       <div class="gift-camera hidden" id="giftCamera">
-        <p>Gift open karne ke baad uski ek cute pic click karo, phir surprise ko rate karo.</p>
+        <p>Opened gift ki ek clear pic click karo, phir surprise ko rate karo.</p>
         <video id="giftVideo" autoplay playsinline></video>
         <canvas id="giftCanvas" class="hidden"></canvas>
         <img id="giftPhoto" class="hidden" alt="Opened gift capture">
