@@ -20,6 +20,18 @@ function readLocal(key) {
   try { return localStorage.getItem(key); } catch { return null; }
 }
 
+function clearSavedProgress() {
+  try {
+    [
+      phaseStorageKey,
+      heartStorageKey,
+      giftStepStorageKey,
+      audioEnabledStorageKey,
+      activeAudioStorageKey
+    ].forEach(key => localStorage.removeItem(key));
+  } catch {}
+}
+
 // const celebrationUnlockAt = Date.UTC(2026, 4, 15, 18, 30, 0); // 16 May 2026, 12:00 AM IST
 // Testing bypass: comment the line above and uncomment this line to open the site instantly.
 const celebrationUnlockAt = Date.now() - 1000;
@@ -460,25 +472,19 @@ function armAudioRestoreOnGesture() {
 function showPhase(id) {
   document.querySelectorAll('.phase').forEach(p => p.classList.add('hidden'));
   $(id).classList.remove('hidden');
-  if (restorablePhases.includes(id)) saveLocal(phaseStorageKey, id);
   if (id !== 'balloon-phase') $('balloonHint').classList.remove('show');
   if (id === 'balloon-phase') clearFloatingDecorations();
   if (id === 'countdown-phase' || id === 'cake-phase') removeDecorTitle();
 }
 
 function restoreSavedPhase() {
-  const savedPhase = readLocal(phaseStorageKey);
-  const phase = restorablePhases.includes(savedPhase) ? savedPhase : 'landing';
+  clearSavedProgress();
+  const phase = 'landing';
   showPhase(phase);
 
   if (phase === 'landing') {
     requestAnimationFrame(resizeHeartCanvas);
-    if (readLocal(heartStorageKey) === 'true') restoreHeartUnlockedState();
   }
-  if (phase === 'cake-phase') initCakePhase();
-  if (phase === 'msg-phase') restoreFinalMessagePhase();
-  if (phase === 'gift-phase') restoreGiftPhase();
-  armAudioRestoreOnGesture();
 }
 
 function clearFloatingDecorations() {
@@ -699,7 +705,7 @@ function revealGiftStep() {
   showPhase('gift-phase');
   saveLocal(giftStepStorageKey, 'experience');
   $('memoryNextBtn').classList.add('hidden');
-  $('giftPhaseText').textContent = 'Memories complete ho gayi. Ab ek last cute step hai.';
+  $('giftPhaseText').textContent = 'All set baby. Ab ek last cute step hai.';
   $('giftExperienceBtn').classList.remove('hidden');
   $('giftReveal').classList.remove('show', 'countdown-reveal');
   $('giftCheck').classList.add('hidden');
@@ -812,6 +818,7 @@ const supabaseConfig = {
 let giftStream = null;
 let giftCapturedBlob = null;
 let giftSubmitting = false;
+let selectedGiftRating = null;
 const ratingOptions = [
   [1, '😭'], [2, '😢'], [3, '😕'], [4, '🙂'], [5, '😊'],
   [6, '😄'], [7, '😍'], [8, '🥰'], [9, '🤩'], [10, '💖']
@@ -845,7 +852,7 @@ async function submitGiftReview(score, emoji) {
   }
 
   giftSubmitting = true;
-  setGiftSubmitStatus('Sending photo and rating to Aditya...', 'loading');
+  setGiftSubmitStatus('Submitting photo and rating to Aditya...', 'loading');
 
   try {
     const safeTime = new Date().toISOString().replace(/[:.]/g, '-');
@@ -888,9 +895,10 @@ async function submitGiftReview(score, emoji) {
     });
     if (!saveResponse.ok) throw new Error('Rating save failed');
 
+    $('giftSubmitBtn').classList.add('hidden');
     setGiftSubmitStatus('Sent to Aditya. Now he can see the photo and rating 💖', 'success');
   } catch {
-    setGiftSubmitStatus('Unable to send. Internet/config check karke dobara rating tap karo.', 'error');
+    setGiftSubmitStatus('Unable to send. Internet/config check karke Submit dobara tap karo.', 'error');
   } finally {
     giftSubmitting = false;
   }
@@ -904,7 +912,9 @@ function stopGiftStream() {
 
 function resetGiftReviewSelection() {
   document.querySelectorAll('.rating-btn').forEach(item => item.classList.remove('selected'));
+  selectedGiftRating = null;
   $('ratingThanks').textContent = '';
+  $('giftSubmitBtn').classList.add('hidden');
   setGiftSubmitStatus('');
 }
 
@@ -948,12 +958,22 @@ ratingOptions.forEach(([score, emoji]) => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.rating-btn').forEach(item => item.classList.remove('selected'));
     btn.classList.add('selected');
-    $('ratingThanks').textContent = `${emoji} ${score}/10 selected. Thank you, cutie.`;
-    submitGiftReview(score, emoji);
+    selectedGiftRating = { score, emoji };
+    $('ratingThanks').textContent = `${emoji} ${score}/10 selected. Submit tap karke send karo.`;
+    $('giftSubmitBtn').classList.remove('hidden');
+    setGiftSubmitStatus('');
     startConfetti();
   });
   $('ratingRow').appendChild(btn);
 });
+
+function submitSelectedGiftReview() {
+  if (!selectedGiftRating) {
+    setGiftSubmitStatus('Pehle rating select karo, phir Submit tap karo.', 'warn');
+    return;
+  }
+  submitGiftReview(selectedGiftRating.score, selectedGiftRating.emoji);
+}
 
 async function openGiftCamera() {
   saveLocal(giftStepStorageKey, 'camera');
@@ -1029,6 +1049,7 @@ $('captureGiftBtn').addEventListener('click', captureGiftPhoto);
 $('reclickGiftBtn').addEventListener('click', openGiftCamera);
 $('uploadGiftBtn').addEventListener('click', uploadGiftPhoto);
 $('giftUploadInput').addEventListener('change', handleGiftUpload);
+$('giftSubmitBtn').addEventListener('click', submitSelectedGiftReview);
 
 // =========================================================
 //  FLOATING WISHES AFTER CANDLES
@@ -1304,7 +1325,7 @@ Is new year me bas yahi wish hai ki tum khud ko hamesha pyaar se dekho, apne dre
 
 18th birthday sirf ek number nahi hai, Ye tumhari ek new beginning hai. Aur main genuinely chahta hoon ki is beginning me tumhare saath sirf good memories, soft moments, aur bahut saari cheeje create karu.
 
-haa pichle 2.5 months se hamare beech sab kuch utna acha nahi hai lekin mai sab bhula ke tumhare saath ek new start krna chahta hoon.
+haa pichle 3 months se hamare beech sab kuch utna acha nahi hai lekin mai sab bhula ke tumhare saath ek new start krna chahta hoon.
 
 Happy Birthday, meri fineshyyt💘.
 Love you so much, and ever ever and forver🫀.

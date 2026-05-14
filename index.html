@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Happy Birthday My Love 💖</title>
+<title>Happy Birthday💖</title>
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 <link rel="preload" href="photo1.jpg" as="image">
 <link rel="preload" href="photo2.jpg" as="image">
@@ -66,7 +66,7 @@
 <!-- ===== PHASE 4: CAKE ===== -->
 <div class="phase hidden" id="cake-phase">
   <div class="phase-card">
-    <h2>🎂 Birthday Cake 🎂</h2>
+    <h2>🎂Birthday Cake🎂</h2>
     <p id="cakeHint">Make a wish, then swipe gently over the candles.</p>
     <div class="cake" id="cake" role="button" tabindex="0" aria-label="Swipe over the candles">
       <div class="cake-base"></div>
@@ -98,7 +98,7 @@
 <!-- ===== PHASE 7: MESSAGE + MEMORIES ===== -->
 <div class="phase hidden" id="msg-phase">
   <div class="phase-card">
-    <h2>💖 Happy Birthday! 💖</h2>
+    <h2>💖Happy Birthday!💖</h2>
     <p class="msg-text type-cursor" id="finalMessage"></p>
     <div class="final-memories">
       <button class="btn memory-start hidden" id="memoryStartBtn">My Best Finds</button>
@@ -117,7 +117,7 @@
 <!-- ===== PHASE 8: GIFT RATING ===== -->
 <div class="phase hidden" id="gift-phase">
   <div class="phase-card gift-phase-card">
-    <h2>💌 Your Experience 💌</h2>
+    <h2>💌Your Experience💌</h2>
     <p id="giftPhaseText">Memories complete ho gayi. Ab ek last cute step hai.</p>
     <button class="btn gift-experience-btn" id="giftExperienceBtn" type="button">Give your experience to me</button>
     <div class="gift-reveal" id="giftReveal">
@@ -134,13 +134,14 @@
         <button class="btn" id="captureGiftBtn">Click Gift Pic</button>
         <div class="photo-actions hidden" id="photoActions">
           <button class="btn secondary-btn" id="reclickGiftBtn" type="button">Reclick Photo</button>
-          <button class="btn secondary-btn" id="uploadGiftBtn" type="button">Upload Photo</button>
+          <button class="btn secondary-btn" id="uploadGiftBtn" type="button">Choose from Gallery</button>
           <input class="hidden" id="giftUploadInput" type="file" accept="image/*">
         </div>
         <div class="gift-review hidden" id="giftReview">
           <span>How was it out of 10?</span>
           <div class="rating-row" id="ratingRow"></div>
           <strong id="ratingThanks"></strong>
+          <button class="btn gift-submit-btn hidden" id="giftSubmitBtn" type="button">Submit</button>
           <small id="giftSubmitStatus"></small>
         </div>
       </div>
