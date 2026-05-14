@@ -1079,6 +1079,7 @@
     min-height: 46px;
     padding: .75rem .85rem;
     font-size: .82rem;
+    border-radius: 16px;
     border: 1px solid rgba(255,255,255,.26);
     box-shadow: 0 8px 22px rgba(0,0,0,.22), 0 0 20px rgba(255,105,180,.26);
   }
