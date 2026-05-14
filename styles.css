@@ -73,6 +73,40 @@
   }
   .audio-toggle:hover { transform: scale(1.06); background: rgba(255,105,180,.24); }
   .audio-toggle.muted { opacity: .72; }
+  .scroll-hint {
+    position: fixed;
+    left: max(.85rem, env(safe-area-inset-left));
+    bottom: max(.85rem, env(safe-area-inset-bottom));
+    z-index: 88;
+    display: inline-flex;
+    align-items: center;
+    gap: .38rem;
+    padding: .42rem .62rem;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 999px;
+    background: rgba(255,105,180,.14);
+    color: rgba(255,244,250,.88);
+    box-shadow: 0 0 18px rgba(255,105,180,.2), 0 8px 18px rgba(0,0,0,.2);
+    backdrop-filter: blur(10px);
+    pointer-events: none;
+    animation: scrollHintFloat 1.45s ease-in-out infinite;
+  }
+  .scroll-hint span {
+    font-size: 1rem;
+    line-height: 1;
+  }
+  .scroll-hint small {
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+  }
+  .scroll-hint.hidden {
+    display: none;
+  }
+  @keyframes scrollHintFloat {
+    50% { transform: translateY(5px); }
+  }
   .sound-tip {
     position: fixed;
     top: max(4rem, calc(env(safe-area-inset-top) + 3.6rem));
@@ -1146,15 +1180,20 @@
   }
   #giftSubmitStatus {
     display: block;
-    min-height: 1.2rem;
-    margin-top: .45rem;
+    min-height: 1.45rem;
+    margin-top: .7rem;
     color: rgba(255,228,240,.88);
-    font-size: .78rem;
+    font-size: .86rem;
+    font-weight: 700;
     line-height: 1.4;
+    text-shadow: 0 0 10px rgba(255,105,180,.32);
   }
   #giftSubmitStatus[data-type="success"] {
-    color: #b8ffd6;
-    text-shadow: 0 0 12px rgba(52,211,153,.5);
+    color: #c9ffdd;
+    font-family: 'Dancing Script', cursive;
+    font-size: clamp(1.25rem, 4.8vw, 1.6rem);
+    line-height: 1.25;
+    text-shadow: 0 0 12px rgba(52,211,153,.62), 0 0 26px rgba(255,105,180,.32);
   }
   #giftSubmitStatus[data-type="warn"] {
     color: #ffe0a3;

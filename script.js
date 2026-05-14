@@ -473,6 +473,7 @@ function showPhase(id) {
   document.querySelectorAll('.phase').forEach(p => p.classList.add('hidden'));
   $(id).classList.remove('hidden');
   if (id !== 'balloon-phase') $('balloonHint').classList.remove('show');
+  $('scrollHint').classList.toggle('hidden', id !== 'msg-phase' && id !== 'gift-phase');
   if (id === 'balloon-phase') clearFloatingDecorations();
   if (id === 'countdown-phase' || id === 'cake-phase') removeDecorTitle();
 }
@@ -896,6 +897,7 @@ async function submitGiftReview(score, emoji) {
     if (!saveResponse.ok) throw new Error('Rating save failed');
 
     $('giftSubmitBtn').classList.add('hidden');
+    $('ratingThanks').textContent = '';
     setGiftSubmitStatus('Sent to Aditya. Now he can see the photo and rating 💖', 'success');
   } catch {
     setGiftSubmitStatus('Unable to send. Internet/config check karke Submit dobara tap karo.', 'error');
