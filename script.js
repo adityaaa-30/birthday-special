@@ -699,7 +699,7 @@ function revealGiftStep() {
   showPhase('gift-phase');
   saveLocal(giftStepStorageKey, 'experience');
   $('memoryNextBtn').classList.add('hidden');
-  $('giftPhaseText').textContent = 'Memories complete ho gayi. Ab mujhe apna experience batao, phir ek last cute surprise step hai.';
+  $('giftPhaseText').textContent = 'Memories complete ho gayi. Ab ek last cute step hai.';
   $('giftExperienceBtn').classList.remove('hidden');
   $('giftReveal').classList.remove('show', 'countdown-reveal');
   $('giftCheck').classList.add('hidden');
@@ -728,7 +728,7 @@ function restoreGiftPhase() {
 
   const giftStep = readLocal(giftStepStorageKey);
   if (giftStep === 'open-gift' || giftStep === 'camera' || giftStep === 'review') {
-    $('giftPhaseText').textContent = 'Gift open karo, phir uski picture click karke mujhe send karo.';
+    $('giftPhaseText').textContent = 'Ab gift ka moment capture karna hai.';
     $('giftExperienceBtn').classList.add('hidden');
     $('giftReveal').classList.add('show');
     $('giftCheck').classList.remove('hidden');
@@ -736,7 +736,7 @@ function restoreGiftPhase() {
     return;
   }
 
-  $('giftPhaseText').textContent = 'Memories complete ho gayi. Ab mujhe apna experience batao, phir ek last cute surprise step hai.';
+  $('giftPhaseText').textContent = 'Memories complete ho gayi. Ab ek last cute step hai.';
   $('giftExperienceBtn').classList.remove('hidden');
 }
 
@@ -932,7 +932,7 @@ function startGiftExperienceFlow() {
   startConfetti();
 
   setTimeout(() => {
-    $('giftPhaseText').textContent = 'Gift open karo, phir uski picture click karke mujhe send karo.';
+    $('giftPhaseText').textContent = 'Ab gift ka moment capture karna hai.';
     $('giftCheck').classList.remove('hidden');
     $('giftOpenBtn').classList.remove('hidden');
     $('giftOpenBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
