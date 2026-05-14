@@ -466,6 +466,42 @@ function armAudioRestoreOnGesture() {
   requestAnimationFrame(restore);
 }
 
+let scrollHintFrame = 0;
+
+function getActivePhase() {
+  return [...document.querySelectorAll('.phase')].find(phase => !phase.classList.contains('hidden'));
+}
+
+function updateScrollHint() {
+  scrollHintFrame = 0;
+  const hint = $('scrollHint');
+  const activePhase = getActivePhase();
+  if (!activePhase || (activePhase.id !== 'msg-phase' && activePhase.id !== 'gift-phase')) {
+    hint.classList.add('hidden');
+    return;
+  }
+
+  const scrollAreas = [activePhase, ...activePhase.querySelectorAll('.phase-card')];
+  const shouldShow = scrollAreas.some(area => {
+    const maxScroll = area.scrollHeight - area.clientHeight;
+    return maxScroll > 18 && area.scrollTop < maxScroll - 18;
+  });
+  hint.classList.toggle('hidden', !shouldShow);
+}
+
+function scheduleScrollHintUpdate() {
+  if (scrollHintFrame) return;
+  scrollHintFrame = requestAnimationFrame(updateScrollHint);
+}
+
+document.addEventListener('scroll', scheduleScrollHintUpdate, true);
+window.addEventListener('resize', scheduleScrollHintUpdate);
+new MutationObserver(scheduleScrollHintUpdate).observe(document.body, {
+  childList: true,
+  characterData: true,
+  subtree: true
+});
+
 // =========================================================
 //  PHASE MANAGEMENT
 // =========================================================
@@ -473,7 +509,8 @@ function showPhase(id) {
   document.querySelectorAll('.phase').forEach(p => p.classList.add('hidden'));
   $(id).classList.remove('hidden');
   if (id !== 'balloon-phase') $('balloonHint').classList.remove('show');
-  $('scrollHint').classList.toggle('hidden', id !== 'msg-phase' && id !== 'gift-phase');
+  $('scrollHint').classList.add('hidden');
+  scheduleScrollHintUpdate();
   if (id === 'balloon-phase') clearFloatingDecorations();
   if (id === 'countdown-phase' || id === 'cake-phase') removeDecorTitle();
 }
