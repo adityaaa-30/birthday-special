@@ -32,9 +32,9 @@ function clearSavedProgress() {
   } catch {}
 }
 
-// const celebrationUnlockAt = Date.UTC(2026, 4, 15, 18, 30, 0); // 16 May 2026, 12:00 AM IST
+const celebrationUnlockAt = Date.UTC(2026, 4, 15, 18, 30, 0); // 16 May 2026, 12:00 AM IST
 // Testing bypass: comment the line above and uncomment this line to open the site instantly.
-const celebrationUnlockAt = Date.now() - 1000;
+// const celebrationUnlockAt = Date.now() - 1000;
 let celebrationGateTimer = null;
 
 const isLowMotionDevice = window.matchMedia('(max-width: 640px)').matches || navigator.hardwareConcurrency <= 4;
