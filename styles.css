@@ -981,20 +981,14 @@
     transition: opacity .65s ease, transform .65s cubic-bezier(.2,.9,.2,1);
   }
   .gift-reveal::before {
-    content: '';
-    position: absolute;
-    inset: -80% -35%;
-    z-index: -1;
-    background: conic-gradient(from 120deg, transparent, rgba(255,255,255,.5), transparent 28%);
-    animation: giftShine 4s linear infinite;
+    content: none;
   }
   .gift-reveal.show {
     opacity: 1;
     transform: translateY(0) scale(1);
-    animation: giftPulse 1.8s ease-in-out .65s infinite;
   }
   .gift-reveal.countdown-reveal {
-    animation: giftCountdownReveal 2.1s cubic-bezier(.2,.86,.2,1) both, giftPulse 1.8s ease-in-out 2.1s infinite;
+    animation: giftCountdownReveal 2.1s cubic-bezier(.2,.86,.2,1) both;
   }
   .gift-reveal span {
     display: block;
@@ -1013,11 +1007,11 @@
     color: #fff;
     text-shadow: 0 0 16px #ff69b4, 0 0 34px rgba(255,20,147,.72);
   }
-  @keyframes giftShine {
-    to { transform: rotate(360deg); }
-  }
-  @keyframes giftPulse {
-    50% { transform: translateY(-4px) scale(1.02); box-shadow: 0 0 38px rgba(255,105,180,.46), 0 14px 30px rgba(0,0,0,.3); }
+  .gift-highlight-line {
+    padding: .45rem .55rem .5rem;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .16);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.24), 0 0 22px rgba(255,105,180,.35);
   }
   @keyframes giftCountdownReveal {
     0% { opacity: 0; transform: translateY(18px) scale(.42); filter: blur(10px); }
@@ -1038,6 +1032,10 @@
   .gift-experience-btn {
     max-width: 360px;
     margin: .15rem auto .9rem;
+  }
+  .memory-next {
+    margin: 1rem auto 0;
+    max-width: 180px;
   }
   .gift-camera {
     margin: 1rem auto .2rem;

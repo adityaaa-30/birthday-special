@@ -8,6 +8,8 @@ const randInt = (a, b) => Math.floor(rand(a, b));
 const phaseStorageKey = 'birthday-current-phase';
 const heartStorageKey = 'birthday-heart-unlocked';
 const giftStepStorageKey = 'birthday-gift-step';
+const audioEnabledStorageKey = 'birthday-audio-enabled';
+const activeAudioStorageKey = 'birthday-active-audio';
 const restorablePhases = ['landing', 'decorate-phase', 'music-phase', 'cake-phase', 'balloon-phase', 'msg-phase', 'gift-phase'];
 
 function saveLocal(key, value) {
@@ -326,6 +328,17 @@ flashbackTrack.loop = true;
 let activeAudioTrack = null;
 let audioMuted = false;
 const audioFadeTimers = new WeakMap();
+const audioTrackIds = new Map([
+  [musicTrack, 'music'],
+  [finalMessageTrack, 'final-message'],
+  [flashbackTrack, 'flashback']
+]);
+const audioTracksById = {
+  music: { track: musicTrack, volume: .85 },
+  'final-message': { track: finalMessageTrack, volume: .78 },
+  flashback: { track: flashbackTrack, volume: .82 }
+};
+let audioRestoreArmed = false;
 
 function updateAudioToggle() {
   const btn = $('audioToggle');
@@ -364,18 +377,24 @@ function stopAudioTrack(track, fade = true) {
   const finish = () => {
     track.pause();
     track.currentTime = 0;
-    if (activeAudioTrack === track) activeAudioTrack = null;
+    if (activeAudioTrack === track) {
+      activeAudioTrack = null;
+      saveLocal(activeAudioStorageKey, '');
+    }
   };
   if (fade) fadeTrackVolume(track, 0, 850, finish);
   else finish();
 }
 
-function playAudioTrack(track, volume = .85) {
+function playAudioTrack(track, volume = .85, options = {}) {
+  const { fallback = true } = options;
   $('audioToggle').classList.remove('hidden');
   [musicTrack, finalMessageTrack, flashbackTrack].forEach(activeTrack => {
     if (activeTrack !== track) stopAudioTrack(activeTrack);
   });
   activeAudioTrack = track;
+  saveLocal(audioEnabledStorageKey, 'true');
+  saveLocal(activeAudioStorageKey, audioTrackIds.get(track) || '');
   track.currentTime = 0;
   track.volume = 0;
   track.muted = audioMuted;
@@ -385,7 +404,9 @@ function playAudioTrack(track, volume = .85) {
       .then(() => {
         if (!audioMuted) fadeTrackVolume(track, volume, 1100);
       })
-      .catch(() => playHappyBirthday());
+      .catch(() => {
+        if (fallback) playHappyBirthday();
+      });
   } else if (!audioMuted) {
     fadeTrackVolume(track, volume, 1100);
   }
@@ -409,8 +430,29 @@ $('audioToggle').addEventListener('click', () => {
     track.muted = audioMuted;
   });
   updateAudioToggle();
+  if (!audioMuted && readLocal(audioEnabledStorageKey) === 'true') restoreSavedAudioAfterRefresh();
 });
 updateAudioToggle();
+
+function restoreSavedAudioAfterRefresh() {
+  if (audioMuted || readLocal(audioEnabledStorageKey) !== 'true') return;
+  const saved = readLocal(activeAudioStorageKey);
+  const savedAudio = audioTracksById[saved];
+  if (!savedAudio) return;
+  if (activeAudioTrack === savedAudio.track && !savedAudio.track.paused) return;
+
+  playAudioTrack(savedAudio.track, savedAudio.volume, { fallback: false });
+}
+
+function armAudioRestoreOnGesture() {
+  if (audioRestoreArmed || readLocal(audioEnabledStorageKey) !== 'true') return;
+  audioRestoreArmed = true;
+  const restore = () => restoreSavedAudioAfterRefresh();
+  ['pointerdown', 'click', 'touchstart', 'keydown'].forEach(eventName => {
+    document.addEventListener(eventName, restore, { once: true, passive: true });
+  });
+  requestAnimationFrame(restore);
+}
 
 // =========================================================
 //  PHASE MANAGEMENT
@@ -436,6 +478,7 @@ function restoreSavedPhase() {
   if (phase === 'cake-phase') initCakePhase();
   if (phase === 'msg-phase') restoreFinalMessagePhase();
   if (phase === 'gift-phase') restoreGiftPhase();
+  armAudioRestoreOnGesture();
 }
 
 function clearFloatingDecorations() {
@@ -655,6 +698,7 @@ function revealGiftStep() {
   stopGiftStream();
   showPhase('gift-phase');
   saveLocal(giftStepStorageKey, 'experience');
+  $('memoryNextBtn').classList.add('hidden');
   $('giftPhaseText').textContent = 'Memories complete ho gayi. Ab mujhe apna experience batao, phir ek last cute surprise step hai.';
   $('giftExperienceBtn').classList.remove('hidden');
   $('giftReveal').classList.remove('show', 'countdown-reveal');
@@ -723,6 +767,7 @@ function showFlashbackFrame(index) {
 async function startFlashback() {
   clearInterval(flashbackTimer);
   $('memoryStartBtn').classList.add('hidden');
+  $('memoryNextBtn').classList.add('hidden');
   $('memoryStage').classList.remove('hidden');
   $('giftReveal').classList.remove('show');
   playFlashbackSong();
@@ -730,7 +775,7 @@ async function startFlashback() {
   if (!flashbackPhotos.length) flashbackPhotos = await preloadFlashbackPhotos();
   if (!flashbackPhotos.length) {
     $('flashbackCounter').textContent = 'Add photo1.jpg to photo15.jpg here';
-    revealGiftStep();
+    $('memoryNextBtn').classList.remove('hidden');
     return;
   }
 
@@ -740,7 +785,11 @@ async function startFlashback() {
     index++;
     if (index >= flashbackPhotos.length) {
       clearInterval(flashbackTimer);
-      setTimeout(revealGiftStep, 900);
+      setTimeout(() => {
+        stopAudioTrack(flashbackTrack);
+        $('memoryNextBtn').classList.remove('hidden');
+        $('memoryNextBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 900);
       return;
     }
     showFlashbackFrame(index);
@@ -748,6 +797,7 @@ async function startFlashback() {
 }
 
 $('memoryStartBtn').addEventListener('click', startFlashback);
+$('memoryNextBtn').addEventListener('click', revealGiftStep);
 
 // =========================================================
 //  GIFT UNBOX VERIFICATION
@@ -1267,6 +1317,7 @@ function restoreFinalMessagePhase() {
   $('finalMessage').textContent = finalMessageText;
   $('finalMessage').classList.remove('type-cursor');
   $('memoryStartBtn').classList.remove('hidden');
+  $('memoryNextBtn').classList.add('hidden');
   $('memoryStage').classList.add('hidden');
   $('giftReveal').classList.remove('show', 'countdown-reveal');
 }
@@ -1281,6 +1332,7 @@ function startTypewriterMessage() {
   el.classList.add('type-cursor');
   giftReveal.classList.remove('show');
   memoryStartBtn.classList.add('hidden');
+  $('memoryNextBtn').classList.add('hidden');
   $('memoryStage').classList.add('hidden');
   let i = 0;
   typewriterTimer = setInterval(() => {
