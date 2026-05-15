@@ -1100,6 +1100,9 @@ const wishes = [
   'make proud your parents',
   'Happiness in every moment',
   'Success in all you do',
+  'Confidence in yourself always',
+  'Good health and a calm mind',
+  'Love and laughter in your life',
 ];
 
 function launchFloatingWishes() {
@@ -1360,11 +1363,11 @@ Aaj tum officially 18 ki ho gayi, but mere liye tum aaj bhi wahi ho jiski smile 
 
 I don't know perfect words kaise likhte hain, par itna sach hai ki tum meri life ka bahut hi special part ho. Tumhari chhoti chhoti baatein, tumhara mood, tumhari hansi, sab ek special moment hai mere liye jo hamesha mere khayalo mai rehti hai.
 
-Is new year me bas yahi wish hai ki tum khud ko hamesha pyaar se dekho, apne dreams ke liye confident raho khub mehnat karo, aur tumhe woh happiness mile jo tum deserve karti ho hope us se jyada hi.
+Is new year me bas yahi wish hai ki tum khud ko hamesha pyaar se dekho, apne dreams ke liye confident raho khub mehnat karo, aur tumhe har woh happiness mile jo tum deserve karti ho hope us se jyada hi.
 
-18th birthday sirf ek number nahi hai, Ye tumhari ek new beginning hai. Aur main genuinely chahta hoon ki is beginning me tumhare saath sirf good memories, soft moments, aur bahut saari cheeje create karu.
+18th birthday sirf ek number nahi hai, Ye tumhari ek new beginning hai. Aur main genuinely chahta hoon ki is beginning mai tumhare saath sirf good memories aur soft moments create karu.
 
-haa pichle 3 months se hamare beech sab kuch utna acha nahi hai lekin mai sab bhula ke tumhare saath ek new start krna chahta hoon.
+Haan, pichle 3 months thode difficult rahe hamare liye, Jo bhi hua mai use peeche chhodkar tumhare saath firse sab theek karna chahta hoon, firse ek nayi beginning chahta hoon..
 
 Happy Birthday, meri fineshyyt💘.
 Love you so much, and ever ever and forver🫀.
