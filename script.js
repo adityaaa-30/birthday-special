@@ -885,12 +885,12 @@ async function submitGiftReview(score, emoji) {
   if (giftSubmitting) return;
 
   if (!isSupabaseConfigured()) {
-    setGiftSubmitStatus('Supabase config add karne ke baad photo/rating Aditya ke dashboard me save hogi.', 'warn');
+    setGiftSubmitStatus('Supabase config add karne ke baad photo/rating rishik ke dashboard me save hogi.', 'warn');
     return;
   }
 
   giftSubmitting = true;
-  setGiftSubmitStatus('Submitting photo and rating to Aditya...', 'loading');
+  setGiftSubmitStatus('Submitting photo and rating to Rishik...', 'loading');
 
   try {
     const safeTime = new Date().toISOString().replace(/[:.]/g, '-');
@@ -935,7 +935,7 @@ async function submitGiftReview(score, emoji) {
 
     $('giftSubmitBtn').classList.add('hidden');
     $('ratingThanks').textContent = '';
-    setGiftSubmitStatus('Sent to Aditya. Now he can see the photo and rating 💖', 'success');
+    setGiftSubmitStatus('Sent to Rishik. Now he can see the photo and rating 💖', 'success');
   } catch {
     setGiftSubmitStatus('Unable to send. Internet/config check karke Submit dobara tap karo.', 'error');
   } finally {
