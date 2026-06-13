@@ -7,10 +7,9 @@ const rand = (a, b) => Math.random() * (b - a) + a;
 const randInt = (a, b) => Math.floor(rand(a, b));
 const phaseStorageKey = 'birthday-current-phase';
 const heartStorageKey = 'birthday-heart-unlocked';
-const giftStepStorageKey = 'birthday-gift-step';
 const audioEnabledStorageKey = 'birthday-audio-enabled';
 const activeAudioStorageKey = 'birthday-active-audio';
-const restorablePhases = ['landing', 'decorate-phase', 'music-phase', 'cake-phase', 'balloon-phase', 'msg-phase', 'gift-phase'];
+const restorablePhases = ['landing', 'decorate-phase', 'music-phase', 'cake-phase', 'balloon-phase', 'msg-phase', 'end-phase'];
 
 function saveLocal(key, value) {
   try { localStorage.setItem(key, value); } catch {}
@@ -25,7 +24,6 @@ function clearSavedProgress() {
     [
       phaseStorageKey,
       heartStorageKey,
-      giftStepStorageKey,
       audioEnabledStorageKey,
       activeAudioStorageKey
     ].forEach(key => localStorage.removeItem(key));
@@ -476,7 +474,7 @@ function updateScrollHint() {
   scrollHintFrame = 0;
   const hint = $('scrollHint');
   const activePhase = getActivePhase();
-  if (!activePhase || (activePhase.id !== 'msg-phase' && activePhase.id !== 'gift-phase')) {
+  if (!activePhase || activePhase.id !== 'msg-phase') {
     hint.classList.add('hidden');
     return;
   }
@@ -624,7 +622,7 @@ function createBirthdayBackdrop() {
 
   const birthdayTitle = document.createElement('div');
   birthdayTitle.className = 'decor-title';
-  birthdayTitle.innerHTML = '<span>Happy 18th Birthday</span><strong>fineshyyt</strong>';
+  birthdayTitle.innerHTML = '<span>Happy Birthday</span><strong>[nickname]</strong>';
   decor.appendChild(birthdayTitle);
 
   const flowers = isLowMotionDevice ? [
@@ -670,7 +668,7 @@ $('decorateBtn').addEventListener('click', () => {
 // keep a few floating in background
 function keepFloating() {
   setInterval(() => {
-    if (!$('balloon-phase').classList.contains('hidden') || !$('msg-phase').classList.contains('hidden') || !$('gift-phase').classList.contains('hidden')) return;
+    if (!$('balloon-phase').classList.contains('hidden') || !$('msg-phase').classList.contains('hidden') || !$('end-phase').classList.contains('hidden')) return;
     if (persistentDecorations < motion.maxBackgroundDecorations) spawnFloatItem(true);
   }, motion.backgroundDecorInterval);
 }
@@ -737,51 +735,11 @@ const flashbackPhotoFiles = Array.from({ length: 15 }, (_, index) => `photo${ind
 let flashbackPhotos = [];
 let flashbackTimer;
 
-function revealGiftStep() {
+function endWebsite() {
   stopAudioTrack(flashbackTrack);
-  stopGiftStream();
-  showPhase('gift-phase');
-  saveLocal(giftStepStorageKey, 'experience');
   $('memoryNextBtn').classList.add('hidden');
-  $('giftPhaseText').textContent = 'All set baby. Ab ek last cute step hai.';
-  $('giftExperienceBtn').classList.remove('hidden');
-  $('giftReveal').classList.remove('show', 'countdown-reveal');
-  $('giftCheck').classList.add('hidden');
-  $('giftCamera').classList.add('hidden');
-  $('giftVideo').classList.add('hidden');
-  $('giftPhoto').classList.add('hidden');
-  $('captureGiftBtn').classList.add('hidden');
-  $('photoActions').classList.add('hidden');
-  $('giftReview').classList.add('hidden');
-  resetGiftReviewSelection();
-  giftCapturedBlob = null;
-}
-
-function restoreGiftPhase() {
-  stopGiftStream();
-  $('giftReveal').classList.remove('show', 'countdown-reveal');
-  $('giftCheck').classList.add('hidden');
-  $('giftCamera').classList.add('hidden');
-  $('giftVideo').classList.add('hidden');
-  $('giftPhoto').classList.add('hidden');
-  $('captureGiftBtn').classList.add('hidden');
-  $('photoActions').classList.add('hidden');
-  $('giftReview').classList.add('hidden');
-  resetGiftReviewSelection();
-  giftCapturedBlob = null;
-
-  const giftStep = readLocal(giftStepStorageKey);
-  if (giftStep === 'open-gift' || giftStep === 'camera' || giftStep === 'review') {
-    $('giftPhaseText').textContent = 'Ab gift ka moment capture karna hai.';
-    $('giftExperienceBtn').classList.add('hidden');
-    $('giftReveal').classList.add('show');
-    $('giftCheck').classList.remove('hidden');
-    $('giftOpenBtn').classList.remove('hidden');
-    return;
-  }
-
-  $('giftPhaseText').textContent = 'Memories complete ho gayi. Ab ek last cute step hai.';
-  $('giftExperienceBtn').classList.remove('hidden');
+  showPhase('end-phase');
+  window.close();
 }
 
 function preloadFlashbackPhotos() {
@@ -813,7 +771,6 @@ async function startFlashback() {
   $('memoryStartBtn').classList.add('hidden');
   $('memoryNextBtn').classList.add('hidden');
   $('memoryStage').classList.remove('hidden');
-  $('giftReveal').classList.remove('show');
   playFlashbackSong();
 
   if (!flashbackPhotos.length) flashbackPhotos = await preloadFlashbackPhotos();
@@ -841,254 +798,7 @@ async function startFlashback() {
 }
 
 $('memoryStartBtn').addEventListener('click', startFlashback);
-$('memoryNextBtn').addEventListener('click', revealGiftStep);
-
-// =========================================================
-//  GIFT UNBOX VERIFICATION
-// =========================================================
-const supabaseConfig = {
-  url: 'https://tujjwkxkordwxnegrarb.supabase.co',
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1amp3a3hrb3Jkd3huZWdyYXJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NzU2MDAsImV4cCI6MjA5NDA1MTYwMH0.rXvQaPe5nl-7w-pBuf6lQZC1yIYleMv9L9Ot2ERPB9M',
-  bucket: 'gift-photos',
-  table: 'gift_reviews'
-};
-
-let giftStream = null;
-let giftCapturedBlob = null;
-let giftSubmitting = false;
-let selectedGiftRating = null;
-const ratingOptions = [
-  [1, '😭'], [2, '😢'], [3, '😕'], [4, '🙂'], [5, '😊'],
-  [6, '😄'], [7, '😍'], [8, '🥰'], [9, '🤩'], [10, '💖']
-];
-
-function isSupabaseConfigured() {
-  return supabaseConfig.url.startsWith('https://') && supabaseConfig.anonKey.length > 20;
-}
-
-function dataUrlToBlob(dataUrl) {
-  const [header, base64] = dataUrl.split(',');
-  const mime = header.match(/:(.*?);/)?.[1] || 'image/jpeg';
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new Blob([bytes], { type: mime });
-}
-
-function setGiftSubmitStatus(message, type = '') {
-  const status = $('giftSubmitStatus');
-  status.textContent = message;
-  status.dataset.type = type;
-}
-
-async function submitGiftReview(score, emoji) {
-  if (giftSubmitting) return;
-
-  if (!isSupabaseConfigured()) {
-    setGiftSubmitStatus('Supabase config add karne ke baad photo/rating rishik ke dashboard me save hogi.', 'warn');
-    return;
-  }
-
-  giftSubmitting = true;
-  setGiftSubmitStatus('Submitting photo and rating to Rishik...', 'loading');
-
-  try {
-    const safeTime = new Date().toISOString().replace(/[:.]/g, '-');
-    const giftMime = giftCapturedBlob?.type || 'image/jpeg';
-    const giftExt = giftMime.includes('png') ? 'png' : giftMime.includes('webp') ? 'webp' : 'jpg';
-    const photoPath = giftCapturedBlob ? `ragini-gift-${safeTime}.${giftExt}` : null;
-    let photoUrl = '';
-
-    if (giftCapturedBlob) {
-      const uploadUrl = `${supabaseConfig.url}/storage/v1/object/${supabaseConfig.bucket}/${photoPath}`;
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: {
-          apikey: supabaseConfig.anonKey,
-          Authorization: `Bearer ${supabaseConfig.anonKey}`,
-          'Content-Type': giftMime,
-          'x-upsert': 'false'
-        },
-        body: giftCapturedBlob
-      });
-      if (!uploadResponse.ok) throw new Error('Photo upload failed');
-      photoUrl = `${supabaseConfig.url}/storage/v1/object/public/${supabaseConfig.bucket}/${photoPath}`;
-    }
-
-    const saveResponse = await fetch(`${supabaseConfig.url}/rest/v1/${supabaseConfig.table}`, {
-      method: 'POST',
-      headers: {
-        apikey: supabaseConfig.anonKey,
-        Authorization: `Bearer ${supabaseConfig.anonKey}`,
-        'Content-Type': 'application/json',
-        Prefer: 'return=minimal'
-      },
-      body: JSON.stringify({
-        rating: score,
-        emoji,
-        photo_path: photoPath,
-        photo_url: photoUrl,
-        user_agent: navigator.userAgent
-      })
-    });
-    if (!saveResponse.ok) throw new Error('Rating save failed');
-
-    $('giftSubmitBtn').classList.add('hidden');
-    $('ratingThanks').textContent = '';
-    setGiftSubmitStatus('Sent to Rishik. Now he can see the photo and rating 💖', 'success');
-  } catch {
-    setGiftSubmitStatus('Unable to send. Internet/config check karke Submit dobara tap karo.', 'error');
-  } finally {
-    giftSubmitting = false;
-  }
-}
-
-function stopGiftStream() {
-  if (!giftStream) return;
-  giftStream.getTracks().forEach(track => track.stop());
-  giftStream = null;
-}
-
-function resetGiftReviewSelection() {
-  document.querySelectorAll('.rating-btn').forEach(item => item.classList.remove('selected'));
-  selectedGiftRating = null;
-  $('ratingThanks').textContent = '';
-  $('giftSubmitBtn').classList.add('hidden');
-  setGiftSubmitStatus('');
-}
-
-function showGiftPhotoPreview(src, blob) {
-  saveLocal(giftStepStorageKey, 'review');
-  const photo = $('giftPhoto');
-  photo.src = src;
-  giftCapturedBlob = blob;
-  photo.classList.remove('hidden');
-  $('giftVideo').classList.add('hidden');
-  $('captureGiftBtn').classList.add('hidden');
-  $('photoActions').classList.remove('hidden');
-  $('giftReview').classList.remove('hidden');
-  $('giftCamera').querySelector('p').textContent = 'Photo preview check kar lo. Agar photo clear nahi hai to reclick karo, ya gallery se upload kar do.';
-  resetGiftReviewSelection();
-}
-
-function startGiftExperienceFlow() {
-  saveLocal(giftStepStorageKey, 'open-gift');
-  $('giftExperienceBtn').classList.add('hidden');
-  $('giftPhaseText').textContent = 'Bas ek tiny countdown jaisa moment... phir gift open karna.';
-  $('giftReveal').classList.remove('show', 'countdown-reveal');
-  void $('giftReveal').offsetWidth;
-  $('giftReveal').classList.add('show', 'countdown-reveal');
-  startConfetti();
-
-  setTimeout(() => {
-    $('giftPhaseText').textContent = 'Ab gift ka moment capture karna hai.';
-    $('giftCheck').classList.remove('hidden');
-    $('giftOpenBtn').classList.remove('hidden');
-    $('giftOpenBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 2300);
-}
-
-ratingOptions.forEach(([score, emoji]) => {
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'rating-btn';
-  btn.textContent = `${emoji} ${score}`;
-  btn.setAttribute('aria-label', `${score} out of 10`);
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.rating-btn').forEach(item => item.classList.remove('selected'));
-    btn.classList.add('selected');
-    selectedGiftRating = { score, emoji };
-    $('ratingThanks').textContent = `${emoji} ${score}/10 selected. Submit tap karke send karo.`;
-    $('giftSubmitBtn').classList.remove('hidden');
-    setGiftSubmitStatus('');
-    startConfetti();
-  });
-  $('ratingRow').appendChild(btn);
-});
-
-function submitSelectedGiftReview() {
-  if (!selectedGiftRating) {
-    setGiftSubmitStatus('Pehle rating select karo, phir Submit tap karo.', 'warn');
-    return;
-  }
-  submitGiftReview(selectedGiftRating.score, selectedGiftRating.emoji);
-}
-
-async function openGiftCamera() {
-  saveLocal(giftStepStorageKey, 'camera');
-  $('giftOpenBtn').classList.add('hidden');
-  $('giftCamera').classList.remove('hidden');
-  $('giftVideo').classList.remove('hidden');
-  $('giftPhoto').classList.add('hidden');
-  $('captureGiftBtn').classList.remove('hidden');
-  $('photoActions').classList.add('hidden');
-  $('giftReview').classList.add('hidden');
-  $('giftCamera').querySelector('p').textContent = 'Opened gift ki ek clear pic click karo, phir surprise ko rate karo.';
-  resetGiftReviewSelection();
-  giftCapturedBlob = null;
-  stopGiftStream();
-
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    $('giftCamera').querySelector('p').textContent = 'Camera available nahi hai. Chrome/Edge me open karke permission allow karo, ya gallery se photo upload kar do.';
-    $('giftVideo').classList.add('hidden');
-    $('captureGiftBtn').classList.add('hidden');
-    $('photoActions').classList.remove('hidden');
-    $('giftReview').classList.remove('hidden');
-    return;
-  }
-
-  try {
-    giftStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
-    $('giftVideo').srcObject = giftStream;
-  } catch {
-    $('giftCamera').querySelector('p').textContent = 'Camera permission nahi mili, but gallery se photo upload kar sakti ho.';
-    $('giftVideo').classList.add('hidden');
-    $('captureGiftBtn').classList.add('hidden');
-    $('photoActions').classList.remove('hidden');
-    $('giftReview').classList.remove('hidden');
-  }
-}
-
-function captureGiftPhoto() {
-  const video = $('giftVideo');
-  const canvas = $('giftCanvas');
-  const width = video.videoWidth || 640;
-  const height = video.videoHeight || 480;
-
-  if (video.readyState < 2) {
-    $('giftCamera').querySelector('p').textContent = 'Camera ready ho raha hai, ek second baad photo lo.';
-    return;
-  }
-
-  canvas.width = width;
-  canvas.height = height;
-  canvas.getContext('2d').drawImage(video, 0, 0, width, height);
-  const dataUrl = canvas.toDataURL('image/jpeg', .9);
-  showGiftPhotoPreview(dataUrl, dataUrlToBlob(dataUrl));
-  stopGiftStream();
-  startConfetti();
-}
-
-function uploadGiftPhoto() {
-  $('giftUploadInput').value = '';
-  $('giftUploadInput').click();
-}
-
-function handleGiftUpload(e) {
-  const file = e.target.files?.[0];
-  if (!file || !file.type.startsWith('image/')) return;
-  stopGiftStream();
-  showGiftPhotoPreview(URL.createObjectURL(file), file);
-  startConfetti();
-}
-
-$('giftExperienceBtn').addEventListener('click', startGiftExperienceFlow);
-$('giftOpenBtn').addEventListener('click', openGiftCamera);
-$('captureGiftBtn').addEventListener('click', captureGiftPhoto);
-$('reclickGiftBtn').addEventListener('click', openGiftCamera);
-$('uploadGiftBtn').addEventListener('click', uploadGiftPhoto);
-$('giftUploadInput').addEventListener('change', handleGiftUpload);
-$('giftSubmitBtn').addEventListener('click', submitSelectedGiftReview);
+$('memoryNextBtn').addEventListener('click', endWebsite);
 
 // =========================================================
 //  FLOATING WISHES AFTER CANDLES
@@ -1357,21 +1067,22 @@ $('balloonBtn').addEventListener('click', () => {
 // =========================================================
 //  PHASE 7: MESSAGE + final confetti
 // =========================================================
-const finalMessageText = `Happy 18th Birthday, Ragini.
+const finalMessageText = `Happy Birthday, [Name].
 
-Aaj tum officially 18 ki ho gayi, but mere liye tum aaj bhi wahi ho jiski smile dekh ke mera din best ho jata hai.
+Aaj tumhara special day hai, aur main bas itna kehna chahta hoon ki tum meri life ka ek bahut special part ho.
 
-I don't know perfect words kaise likhte hain, par itna sach hai ki tum meri life ka bahut hi special part ho. Tumhari chhoti chhoti baatein, tumhara mood, tumhari hansi, sab ek special moment hai mere liye jo hamesha mere khayalo mai rehti hai.
+Tumhari smile, tumhari chhoti chhoti baatein, tumhara mood, tumhari hansi - ye sab mere liye normal moments nahi hain. Ye woh memories hain jo bina effort ke bhi mere dil ke paas reh jaati hain.
 
-Is new year me bas yahi wish hai ki tum khud ko hamesha pyaar se dekho, apne dreams ke liye confident raho khub mehnat karo, aur tumhe har woh happiness mile jo tum deserve karti ho hope us se jyada hi.
+Is new year me meri wish hai ki tum khud ko hamesha pyaar se dekho, apne dreams ke liye confident raho, aur tumhe woh happiness mile jo tum truly deserve karti ho.
 
-18th birthday sirf ek number nahi hai, Ye tumhari ek new beginning hai. Aur main genuinely chahta hoon ki is beginning mai tumhare saath sirf good memories aur soft moments create karu.
+Birthday sirf ek date nahi hota. Ye ek fresh beginning jaisa feel hota hai, aur main genuinely chahta hoon ki is new year me tumhare saath aur bhi beautiful memories create karu.
 
-Haan, pichle 3 months thode difficult rahe hamare liye, Jo bhi hua mai use peeche chhodkar tumhare saath firse sab theek karna chahta hoon, firse ek nayi beginning chahta hoon..
+Agar kabhi hamare beech kuch difficult raha ho, to main bas itna chahta hoon ki hum usse pyaar aur patience ke saath better bana sakein.
 
-Happy Birthday, meri fineshyyt💘.
-Love you so much, and ever ever and forver🫀.
-Tum ho to sab kuch thoda zyada beautiful lagta hai.`;
+Happy Birthday, meri [nickname].
+Love you so much.
+
+- your [your name]`;
 
 let typewriterTimer;
 function restoreFinalMessagePhase() {
@@ -1382,18 +1093,15 @@ function restoreFinalMessagePhase() {
   $('memoryStartBtn').classList.remove('hidden');
   $('memoryNextBtn').classList.add('hidden');
   $('memoryStage').classList.add('hidden');
-  $('giftReveal').classList.remove('show', 'countdown-reveal');
 }
 
 function startTypewriterMessage() {
   const el = $('finalMessage');
-  const giftReveal = $('giftReveal');
   const memoryStartBtn = $('memoryStartBtn');
   clearInterval(typewriterTimer);
   playFinalMessageSong();
   el.textContent = '';
   el.classList.add('type-cursor');
-  giftReveal.classList.remove('show');
   memoryStartBtn.classList.add('hidden');
   $('memoryNextBtn').classList.add('hidden');
   $('memoryStage').classList.add('hidden');

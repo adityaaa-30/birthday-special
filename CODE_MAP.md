@@ -7,7 +7,6 @@ Use this file as a quick guide when you want to edit the birthday website.
 - `index.html` - Page structure only: sections/phases, buttons, images, text.
 - `styles.css` - All design code: colors, layout, animations, responsive mobile/PC styling.
 - `script.js` - All working logic: date lock, buttons, drawing heart, music, memories, countdown, balloons.
-- `SUPABASE_SETUP.md` - Setup guide for receiving opened gift photo + rating in Supabase.
 
 ## Easy Search Words
 
@@ -17,7 +16,7 @@ Use this file as a quick guide when you want to edit the birthday website.
 - Floating wishes after cake candles: search `FLOATING WISHES` in `script.js` and `floating-wish` in `styles.css`.
 - Mobile/PC responsive code: search `@media` in `styles.css`.
 - Final message: search `MESSAGE` in `index.html`, and `typeFinalMessage` in `script.js`.
-- Gift photo/rating upload: search `supabaseConfig` and `GIFT UNBOX VERIFICATION` in `script.js`.
+- Gift photo preview: search `GIFT PHOTO PREVIEW` in `script.js`.
 
 ## Unlock Date
 
